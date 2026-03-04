@@ -15,6 +15,7 @@ import com.alexdamolidis.model.Semester;
 import com.alexdamolidis.parser.StringParser;
 import com.alexdamolidis.repository.SemesterRepository;
 import com.alexdamolidis.util.EndpointBuilder;
+import com.alexdamolidis.util.AttachmentProcessingException;
 import com.alexdamolidis.util.BrightspaceClient;
 import com.alexdamolidis.util.ContentExtractor;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -103,15 +104,14 @@ public class AssignmentService {
 
     /**
      * fetch, extract, and assign attachment data from Brightspace API, if an
-     * attachment is larger than 10MB it will be skipped to avoid outOfMemoryError.
+     * attachment is larger than 10MB it will be skipped to prevent excesive memory usage or video downloads.
      * 
-     * @param assignment assignment object
+     * @param assignment assignment object containing attachments.
      * 
-     * @param orgUnitId unique identifier each course has
+     * @param orgUnitId unique course identifier.
      * 
-     * @throws IOException l
+     * @throws AttachmentProcessingException if attachment download or text extraction fails
      * 
-     * @throws InterruptedException l
      */
     public Assignment processAttachments(Assignment assignment, String orgUnitId) {
         for (Attachment attachment : assignment.getAttachments()) {
@@ -131,8 +131,8 @@ public class AssignmentService {
 
                     attachment.setAttachmentText(cleanExtractedText);
                 }
-            } catch (Exception e) {
-                System.err.println("Failed to process file " + attachment.getFileName() + ": " + e.getMessage());
+            } catch (AttachmentProcessingException e) {
+                throw new RuntimeException("Failed to process file " + attachment.getFileName() + ": " + e.getMessage());
             }
         }
 

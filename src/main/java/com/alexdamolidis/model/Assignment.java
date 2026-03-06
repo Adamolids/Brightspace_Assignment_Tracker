@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -102,6 +103,22 @@ public class Assignment {
             return "this is very high priority";
         }        
         */
+    }
+
+    public boolean updateNameAndDateProperties(Assignment newAssign){
+
+        boolean changed = false;
+
+        if(!Objects.equals(this.name, newAssign.name)){
+            this.name = newAssign.name;
+            changed = true;
+        }
+        if(!Objects.equals(this.dueDate, newAssign.dueDate)){
+            this.dueDate = newAssign.dueDate;
+            changed = true;
+        }
+
+        return changed;
     }
 
     @Override

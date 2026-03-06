@@ -3,8 +3,10 @@ package com.alexdamolidis.service;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import com.alexdamolidis.model.BrightspaceWrapper;
@@ -230,11 +232,12 @@ public class AssignmentService {
 
     /**
      * checks exsisting assignment folderIds against new assignment folderIds and adds
-     * any newly discovered assignments to the course.
+     * any newly discovered assignments to the course. Also checks existing assignment 
+     * names and dates against new assignment data, updates if new data is different.
      * 
      * @param semester Semester object
      * 
-     * @throws RuntimeException If the JSON respose cannot be mapped to the
+     * @throws RuntimeException If the JSON response cannot be mapped to the
      * Assignment model.
      */
     public void checkForNewAssignments(Semester semester) {
@@ -243,22 +246,28 @@ public class AssignmentService {
                 continue;
             String assignmentsJson = scraper.sendGetRequest(EndpointBuilder.buildAllAssignmentsUrl(course.getOrgUnitId()));
             try{
-                List<Assignment> assignments = mapper.readValue(assignmentsJson, new TypeReference<List<Assignment>>(){});
-                Set<String> existingAssignmentIds = course.getAssignments().stream()
-                                                          .map(Assignment::getFolderId)
-                                                          .collect(Collectors.toSet());
-                for (Assignment newAssignmentData : assignments) {
-                    if (!existingAssignmentIds.contains(newAssignmentData.getFolderId())) {
+                List<Assignment> assignmentsFromApi = mapper.readValue(assignmentsJson, new TypeReference<List<Assignment>>(){});
+
+                Map<String, Assignment> existingAssignmentsMap = course.getAssignments().stream()
+                                                                       .collect(Collectors.toMap(Assignment::getFolderId, a -> a));
+                for (Assignment newAssignmentData : assignmentsFromApi) {                    
+                    if (!existingAssignmentsMap.containsKey(newAssignmentData.getFolderId())){
                         course.addAssignment(newAssignmentData);
-                        if (newAssignmentData.getAttachments() == null)
-                            continue;
-                        processAttachments(newAssignmentData, course.getOrgUnitId());
+
+                        if (newAssignmentData.getAttachments() != null){
+                            processAttachments(newAssignmentData, course.getOrgUnitId());
+                        }
+                            
+                    }else{
+                        Assignment existingAssignment = existingAssignmentsMap.get(newAssignmentData.getFolderId());
+                        if (existingAssignment.updateNameAndDateProperties(newAssignmentData)){
+                            System.out.println("Detected change in: " + existingAssignment.getName());
+                        }
                     }
                 }
-            }catch(IOException e){
+            }catch (IOException e){
                 throw new RuntimeException( course.getName() + " failed to sync. ", e);
             }
-
         }
     }
 }

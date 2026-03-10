@@ -30,6 +30,8 @@ The current version follows a layered architecture with clear separation of conc
 
 **Service Layer:** `AssignmentService` orchestrates synchronization logic and ensures idempotent updates using `HashSet` based comparisons.
 
+**AI Layer:** `LlmService` enriches assignments with AI generated summaries, reasoning, and priority scores by constructing structured prompts, communicating with the Gemini API, and mapping JSON responses back into the domain model.
+
 ---
 
 ## Technical Implementation
@@ -38,6 +40,7 @@ The current version follows a layered architecture with clear separation of conc
 
 ```text
 src/main/java/com/alexdamolidis/
+├── ai/         (LLM integration and AI enrichment services)
 ├── model/      (Semester, Course, Assignment, and Attachment POJOs)
 ├── parser/     (HTML sanitization and text normalization utilities)
 ├── repository/ (Local JSON persistence and state rehydration)
@@ -46,7 +49,8 @@ src/main/java/com/alexdamolidis/
 └── test/java/  (JUnit 5 and Mockito test suites)
 
 cookies.txt     (Local session storage – git-ignored)
-Data Mapping Strategy
+```
+### Data Mapping Strategy
 
 The Brightspace API returns large, nested objects. To simplify processing, I leveraged URL query filters to limit responses to only relevant records before mapping them to domain models.
 
@@ -54,8 +58,15 @@ Credit Based Filtering: Uses the _VC marker in course codes to differentiate cre
 
 Integrity Logic: Implements a composite key (orgUnitId + folderId) to guarantee assignment uniqueness and maintain consistent state across repeated synchronization runs.
 
-Setup and Usage
-Authentication Setup
+## Setup and Usage
+### AI Summarization Notice
+The assignment summarization feature sends assignment contents and attachment text to a Large Language Model for summarization, reasoning, and priority score.
+
+Users should be aware that Google's free tier API may store and use submitted content for service improvement. Because course materials may be considered institutional intellectual property, sending this data through the free tier API could violate your school's policies.
+
+To avoid this risk, it is strongly recommended to use a paid API tier or locally hosted LLM where submitted data is not retained or used for training.
+
+### Authentication Setup
 
 This project requires a cookies.txt file in the root directory.
 
@@ -69,16 +80,17 @@ Paste the entire string into the first line of cookies.txt.
 
 Note: Because these are session based cookies, the file must be updated if the server returns a 403 Forbidden status.
 
-Multi Institution Compatibility
+### Multi Institution Compatibility
 
 While configured for the D2L "Slate" environment, this tool can be adapted for other Brightspace instances.
 Modify the EndpointBuilder class to update the base URL or API version string to match your institution’s Brightspace domain.
 
-Execution Commands
+### Execution Commands
 mvn clean compile
 mvn test
 mvn exec:java -Dexec.mainClass="com.alexdamolidis.App"
-Roadmap
+
+## Roadmap
 
  - [x] REST API integration and JSON to object mapping
 
@@ -86,6 +98,6 @@ Roadmap
 
  - [x] LLM based assignment summarization and priority scoring
 
- - [] Persistent local storage (SQLite integration)
+ - [ ] Persistent local storage (SQLite integration)
 
- - [] Google Calendar API export
+ - [ ] Google Calendar API export

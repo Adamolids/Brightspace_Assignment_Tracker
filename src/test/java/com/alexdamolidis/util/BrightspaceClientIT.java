@@ -41,7 +41,6 @@ public class BrightspaceClientIT {
 		}else{
 			System.out.println("This host does not have the rate limiting scheme active");
 		}
-
 	}
 	
 }

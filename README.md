@@ -48,8 +48,13 @@ src/main/java/com/alexdamolidis/
 ├── util/       (API communication, endpoint configuration, and content extraction helpers)
 └── test/java/  (JUnit 5 and Mockito test suites)
 
+.cookies.example.txt (Template for Brightspace session cookies)
+.env.example.txt     (Template for required environment variables)
+
 cookies.txt     (Local session storage – git-ignored)
+.env            (Stores LLM API key    - git-ignored)
 ```
+
 ### Data Mapping Strategy
 
 The Brightspace API returns large, nested objects. To simplify processing, I leveraged URL query filters to limit responses to only relevant records before mapping them to domain models.

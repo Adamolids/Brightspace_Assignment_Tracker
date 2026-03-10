@@ -84,7 +84,7 @@ Roadmap
 
  - [x] Mockito backed unit test suite for synchronization logic
 
- - [] LLM based assignment summarization and priority scoring
+ - [x] LLM based assignment summarization and priority scoring
 
  - [] Persistent local storage (SQLite integration)
 

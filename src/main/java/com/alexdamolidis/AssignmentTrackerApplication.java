@@ -24,10 +24,17 @@ public class AssignmentTrackerApplication {
 			// logger.info("Sync was successful");
 			System.out.println("Starting AI enrichment for " + semester.getName() +"...");
 
+			int totalAssignments = service.countAssignmentsWorthCredits(semester);
+			int currentCount     = 0;
+			System.out.println("Generating priorities, reasoning, and summaries for " + totalAssignments + " assignments...");
+
 			for (Course course : semester.getCourses()) {
                 if (course.getIsWorthCredits() && course.getAssignments() != null) {
                     for (Assignment assignment : course.getAssignments()) {
+						currentCount++;
+						System.out.print(String.format("[%d/%d] %-40s", currentCount, totalAssignments, assignment.getName()));
                         llmService.populateAiFields(assignment);
+						System.out.println("- [Synced]");
                     }
                 }
             }

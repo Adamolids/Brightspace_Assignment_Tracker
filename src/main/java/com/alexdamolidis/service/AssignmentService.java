@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import com.alexdamolidis.model.BrightspaceWrapper;
@@ -137,7 +136,6 @@ public class AssignmentService {
                 throw new RuntimeException("Failed to process file " + attachment.getFileName() + ": " + e.getMessage());
             }
         }
-
         return assignment;
     }
 
@@ -173,7 +171,6 @@ public class AssignmentService {
             }
         }
         // System.out.println(semester);
-        saveSemesterToFile(semester);
         return semester;
     }
 
@@ -183,20 +180,19 @@ public class AssignmentService {
         checkForNewCourses(semester);
         checkForNewAssignments(semester);
         // System.out.println(semester);
-        saveSemesterToFile(semester);
 
         return semester;
     }
 
-    public void sync(){
+    public Semester sync(){
         String name = createSemesterName();
 
         if (!new File("data/" + name + "_data.json").exists()) {
             System.out.println("No local data detected, running full sync");
-            runFullSync(name);
+            return runFullSync(name);
         } else {
             System.out.println("Local data detected, running smart sync");
-            runSmartSync(name);
+            return runSmartSync(name);
         }
 
     }
@@ -211,8 +207,9 @@ public class AssignmentService {
      * model.
      */
     public void checkForNewCourses(Semester semester) {
-        Set<String> existingCourseIds = semester.getCourses().stream().map(Course::getOrgUnitId)
-                .collect(Collectors.toSet());
+        Set<String> existingCourseIds = semester.getCourses().stream()
+                                                .map(Course::getOrgUnitId)
+                                                .collect(Collectors.toSet());
 
         String coursesJson = scraper.sendGetRequest(EndpointBuilder.buildMyEnrollmentsUrl());
         try {

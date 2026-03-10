@@ -16,5 +16,9 @@ replay_pid*
 .settings/
 .classpath
 .project
+.idea/
+*.iml
+*.iws
 cookies.txt
 /data/
+.env

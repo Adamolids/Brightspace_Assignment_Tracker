@@ -8,10 +8,13 @@ public class Attachment {
 
     @JsonProperty("FileName")
     private String fileName;
+
     @JsonProperty("FileId")
     private String fileId;
+    
     @JsonProperty("Size")
     private int fileSize;
+
     private String attachmentText;
 
     public Attachment(){}

@@ -267,4 +267,22 @@ public class AssignmentService {
             }
         }
     }
+
+    /**
+     * Collects a count of assignments from courses worth credits from semester object.
+     * @param semester Semester object with assignments to be counted.
+     * @return count Count of assignments worth credits.
+     */
+    public int countAssignmentsWorthCredits(Semester semester){
+        int count = 0;
+
+        for(Course course : semester.getCourses()){
+            if(course.getIsWorthCredits() && course.getAssignments() != null){
+                count += course.getAssignments().size();
+            }
+
+        }
+
+        return count;
+    }
 }

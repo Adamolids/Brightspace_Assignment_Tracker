@@ -107,17 +107,6 @@ public class Assignment {
 
     public int getPriority(){
         return priority;
-        /*
-        if(this.priority == 1){
-            return "this is low priority (1)";
-        }else if(this.priority == 2){
-            return "this is medium priority (2)";
-        }else if(this.priority == 3){
-            return "this is high priority (3)";
-        }else{
-            return "this is very high priority (4)";
-        }        
-        */
     }
 
     public boolean updateNameAndDateProperties(Assignment newAssign){

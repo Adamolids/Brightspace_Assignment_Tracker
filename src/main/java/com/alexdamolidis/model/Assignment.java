@@ -1,10 +1,11 @@
 package com.alexdamolidis.model;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.time.temporal.ChronoUnit;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -20,8 +21,8 @@ public class Assignment {
     private String name;
 
     @JsonProperty("DueDate")
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
-    private LocalDateTime dueDate;
+    @JsonFormat(shape = JsonFormat.Shape.STRING)
+    private OffsetDateTime dueDate;
 
     @JsonProperty("Attachments")
     private List<Attachment> attachments = new ArrayList<>();
@@ -35,6 +36,8 @@ public class Assignment {
 
     @JsonProperty("reasoning")
     private String reasoning;
+
+    private Boolean isSyncedToCalendar = false;
 
     @JsonProperty("CustomInstructions")
     private void unpackInstructions(Map<String, Object> custom){
@@ -53,7 +56,7 @@ public class Assignment {
         this.name = name;
     }
 
-    public void setDueDate(LocalDateTime dueDate) {
+    public void setDueDate(OffsetDateTime dueDate) {
         this.dueDate = dueDate;
     }
 
@@ -69,7 +72,7 @@ public class Assignment {
         return name;
     }
 
-    public LocalDateTime getDueDate() {
+    public OffsetDateTime getDueDate() {
         return dueDate;
     }
 
@@ -84,6 +87,10 @@ public class Assignment {
     public void addAttachment(Attachment attachment){
         this.attachments.add(attachment);
     }
+
+    public void setAttachments(List<Attachment> attachments) {
+        this.attachments = attachments;
+    }   
 
     public void setLlmSummary(String llmSummary){
         this.llmSummary = llmSummary;
@@ -109,6 +116,14 @@ public class Assignment {
         return priority;
     }
 
+    public Boolean getIsSyncedToCalendar(){
+        return isSyncedToCalendar;
+    } 
+
+    public void setIsSyncedToCalendar(Boolean isSyncedToCalendar){
+        this.isSyncedToCalendar = isSyncedToCalendar;
+    }
+
     public boolean updateNameAndDateProperties(Assignment newAssign){
 
         boolean changed = false;
@@ -125,9 +140,14 @@ public class Assignment {
         return changed;
     }
 
+    public long getDaysUntilDue(){
+        if(this.dueDate == null) return 0;
+        return ChronoUnit.DAYS.between(OffsetDateTime.now(), this.dueDate);
+    }
+
     @Override
     public String toString() {
         return "Assignment [folderUrl=" + folderId + ", name=" + name + ", dueDate=" + dueDate + ", attachments="
                 + attachments + ", instructionText=" + instructionText + "]";
-    }   
+    }
 }

@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
-  root="true">
+<project xmlns="http://maven.apache.org/POM/4.0.0" 
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
-  <modelVersion>4.1.0</modelVersion>
+  <modelVersion>4.0.0</modelVersion>
 
   <groupId>com.alexdamolidis</groupId>
   <artifactId>brightspace_assignment_tracker</artifactId>
@@ -21,25 +21,23 @@
   </properties>
 
   <dependencies>
-    <dependency>
-        <groupId>org.junit.jupiter</groupId>
-        <artifactId>junit-jupiter</artifactId>
-        <version>5.10.0</version>
-        <scope>test</scope>
-    </dependency>
 
+    <dependency>
+        <groupId>org.xerial</groupId>
+        <artifactId>sqlite-jdbc</artifactId>
+        <version>3.45.1.0</version>
+          <exclusions>
+            <exclusion>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-api</artifactId>
+            </exclusion>
+          </exclusions>
+    </dependency>
+  
     <dependency>
         <groupId>org.slf4j</groupId>
-        <!-- <artifactId>slf4j-simple</artifactId> -->
-        <artifactId>slf4j-nop</artifactId>
-        <version>2.0.7</version>
-    </dependency>
-
-    <!-- remove when implementing logging -->
-    <dependency>
-      <groupId>org.apache.logging.log4j</groupId>
-      <artifactId>log4j-to-slf4j</artifactId>
-      <version>2.20.0</version>
+        <artifactId>slf4j-simple</artifactId>
+        <version>2.0.13</version>
     </dependency>
 
     <dependency>
@@ -65,7 +63,19 @@
 		    <groupId>org.apache.tika</groupId>
 		    <artifactId>tika-core</artifactId>
 		    <version>3.0.0</version>
+        <exclusions>
+          <exclusion>
+              <groupId>org.slf4j</groupId>
+              <artifactId>slf4j-api</artifactId>
+          </exclusion>
+        </exclusions>
 		</dependency>
+
+    <dependency>
+        <groupId>org.apache.logging.log4j</groupId>
+        <artifactId>log4j-to-slf4j</artifactId>
+        <version>2.24.1</version>
+    </dependency>
 
 		<dependency>
 		    <groupId>org.apache.tika</groupId>

@@ -48,8 +48,6 @@ public class Course {
         return assignments;
     }
 
-    
-
     public void setOrgUnitId(String orgUnitId) {
         this.orgUnitId = orgUnitId;
     }
@@ -67,6 +65,4 @@ public class Course {
         return "Course [orgUnitId=" + orgUnitId + ", name=" + name + ", isWorthCredits=" + isWorthCredits
                 + ", assignments=" + assignments + "]";
     }   
-
-    
 }

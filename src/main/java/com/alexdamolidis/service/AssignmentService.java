@@ -1,6 +1,5 @@
 package com.alexdamolidis.service;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -8,17 +7,10 @@ import java.util.Scanner;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import com.alexdamolidis.model.BrightspaceWrapper;
-import com.alexdamolidis.model.Assignment;
-import com.alexdamolidis.model.Attachment;
-import com.alexdamolidis.model.Course;
-import com.alexdamolidis.model.Semester;
+import com.alexdamolidis.model.*;
 import com.alexdamolidis.parser.StringParser;
-import com.alexdamolidis.repository.SemesterRepository;
-import com.alexdamolidis.util.EndpointBuilder;
-import com.alexdamolidis.util.AttachmentProcessingException;
-import com.alexdamolidis.util.BrightspaceClient;
-import com.alexdamolidis.util.ContentExtractor;
+import com.alexdamolidis.repository.SqliteRepository;
+import com.alexdamolidis.util.*;    
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -28,19 +20,22 @@ public class AssignmentService {
     private final ObjectMapper mapper;
     private final BrightspaceClient scraper;
     private final ContentExtractor extractor;
+    private final SqliteRepository repo;
 
-    public AssignmentService(BrightspaceClient scraper) {
+    public AssignmentService(BrightspaceClient scraper, SqliteRepository repo) {
         this.mapper = new ObjectMapper();
-        mapper.registerModule(new JavaTimeModule());
-        mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        this.repo = repo;
         this.scraper = scraper;
         this.extractor = ContentExtractor.getInstance();
+
+        mapper.registerModule(new JavaTimeModule());
+        mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
     }
 
     /**
      * accept a semester name from the user for the semester object.
      * 
-     * @return name
+     * @return name 
      */
     public String createSemesterName() {
         Scanner scan = new Scanner(System.in);
@@ -92,7 +87,6 @@ public class AssignmentService {
                     String cleanText = StringParser.cleanHtml(assign.getInstructionText());
                     assign.setInstructionText(cleanText);
                 }
-
                 if (assign.getAttachments() == null)
                     continue;
                 processAttachments(assign, course.getOrgUnitId());
@@ -139,31 +133,8 @@ public class AssignmentService {
         return assignment;
     }
 
-    /**
-     * saves all processed data to a json, if the data directory does not exist, it
-     * will create it.
-     * 
-     * @param semester semester object
-     * 
-     * @throws RuntimeException If the semester object cannot be saved to a JSON file.
-     * 
-     */
-    public void saveSemesterToFile(Semester semester) {
-        try {
-            File directory = new File("data");
-            if (!directory.exists()) {
-                directory.mkdir();
-            }
-            File file = new File(directory, semester.getName() + "_data.json");
-            mapper.writerWithDefaultPrettyPrinter().writeValue(file, semester);
-            System.out.println("Data saved to :" + file.getAbsolutePath());
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to save semester data: " + e);
-        }
-    }
 
-    public Semester runFullSync(String name) {
-        Semester semester = new Semester(name);
+    public Semester runFullSync(Semester semester) {
         fetchAndMapCourses(semester);
         for (Course course : semester.getCourses()) {
             if (course.getIsWorthCredits()) {
@@ -174,9 +145,7 @@ public class AssignmentService {
         return semester;
     }
 
-    public Semester runSmartSync(String name) {
-        SemesterRepository loadData = new SemesterRepository();
-        Semester semester = loadData.loadCollectedData("data/" + name + "_data.json");
+    public Semester runSmartSync(Semester semester) {
         checkForNewCourses(semester);
         checkForNewAssignments(semester);
         // System.out.println(semester);
@@ -185,23 +154,26 @@ public class AssignmentService {
     }
 
     public Semester sync(){
-        String name = createSemesterName();
+        String semesterName = createSemesterName();
+        Semester loadedSemester = repo.loadSemester(semesterName);
 
-        if (!new File("data/" + name + "_data.json").exists()) {
+        if(loadedSemester == null){
             System.out.println("No local data detected, running full sync");
-            return runFullSync(name);
-        } else {
+            Semester semester = new Semester(semesterName);
+            runFullSync(semester);
+            return semester;
+        }else{
             System.out.println("Local data detected, running smart sync");
-            return runSmartSync(name);
+            runSmartSync(loadedSemester);
+            return loadedSemester;
         }
-
     }
 
     /**
      * checks exsisting getOrgUnitId's against new getOrgUnitId's and adds any newly
      * discovered courses to the semester.
      * 
-     * @param semester Semester object
+     * @param semester Semester object.
      * 
      * @throws RuntimeException If the JSON respose cannot be mapped to the Course
      * model.
@@ -280,9 +252,7 @@ public class AssignmentService {
             if(course.getIsWorthCredits() && course.getAssignments() != null){
                 count += course.getAssignments().size();
             }
-
         }
-
         return count;
     }
 }

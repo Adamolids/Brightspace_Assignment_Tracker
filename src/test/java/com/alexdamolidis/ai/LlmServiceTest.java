@@ -4,9 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.time.LocalDate;
-import java.time.OffsetDateTime;
-
 import org.junit.jupiter.api.Test;
 
 import com.alexdamolidis.model.Assignment;
@@ -19,7 +16,9 @@ public class LlmServiceTest {
         LlmService llmService = new LlmService();
         Assignment assignment = new Assignment();
         assignment.setName("TestAssignment1Name");
-        assignment.setDueDate(OffsetDateTime.parse("2026-03-11T04:59:59.000Z").toLocalDateTime());
+        
+        //set dueDate to null, when sent to getDaysUntilDue, it will return 0.
+        assignment.setDueDate(null);
         assignment.setInstructionText("Develop a test method for Assignment1");
 
         Attachment att1 = new Attachment();
@@ -30,7 +29,7 @@ public class LlmServiceTest {
         String prompt = llmService.buildPrompt(assignment);
 
         assertTrue(prompt.contains("TestAssignment1Name"));
-        assertTrue(prompt.contains(LocalDate.now().toString()));
+        assertTrue(prompt.contains("Days Until Due: 0"));
         assertTrue(prompt.contains("rubric.pdf"));
         assertTrue(prompt.contains("Grading criteria"));
     }

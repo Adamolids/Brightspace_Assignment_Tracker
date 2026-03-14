@@ -1,7 +1,7 @@
 # Brightspace Assignment Tracker
 
 A Java 17 synchronization utility for the Brightspace (D2L) platform.  
-This tool automates the retrieval of course metadata, assignment folders, and attachments by interfacing directly with the platform’s REST API endpoints.
+This tool automates the retrieval of course metadata and assignment folders by interfacing with the platform’s REST API endpoints, then leverages a Large Language Model (Gemini API) to enrich raw coursework data with AI generated summaries, reasoning, and intelligent priority scoring.
 
 ---
 
@@ -9,7 +9,7 @@ This tool automates the retrieval of course metadata, assignment folders, and at
 
 ### The Shift from Scraping to REST
 
-The project’s first iteration utilized Jsoup for HTML parsing. While functional, reliance on front end CSS selectors proved unstable. After researching Brightspace’s developer resources and analyzing network traffic, I transitioned to using REST API endpoints for a more reliable and maintainable integration.
+The project’s first iteration utilized Jsoup for HTML parsing. While functional, reliance on front end CSS selectors proved unstable. After researching Brightspace’s developer resources and analyzing browser network traffic, I transitioned to using REST API endpoints for a more reliable and maintainable integration.
 
 ### From Data Retrieval to Stateful Synchronization
 
@@ -20,13 +20,21 @@ As the project evolved, the focus expanded beyond simple data retrieval:
 - Synchronization logic was redesigned to be idempotent, using composite keys (`orgUnitId` + `folderId`) and `HashSet` based comparisons to prevent duplicate entries across repeated runs.
 - Unit tests were later introduced using JUnit 5 and Mockito to validate synchronization behavior and edge cases.
 
+### Transition to Relational Persistence
+
+The most recent evolution replaced local JSON storage with a SQLite backed repository, improving data integrity and enabling more robust synchronization.
+
+- Atomic Saves: The sync pipeline now gathers all required data (API metadata and LLM enrichment) before performing a single final upsert, preventing partial writes and reducing the risk of database corruption.
+- Timezone Awareness: Migration from `LocalDateTime` to `OffsetDateTime` ensures assignment deadlines remain accurate regardless of system timezone.
+- Hallucination Safeguards: `daysUntilDue` is now computed in application code instead of by the LLM, preventing hallucinated values.
+
 ### Current Architecture
 
 The current version follows a layered architecture with clear separation of concerns:
 
 **Network Layer:** `BrightspaceClient` handles session based authentication and raw HTTP communication.
 
-**Repository Layer:** `SemesterRepository` hydrates previously synchronized data from local JSON storage, supporting incremental updates and minimizing unnecessary network calls.
+**Repository Layer:** `SemesterRepository` persists and hydrates assignment data from the local SQLite database, enabling incremental synchronization across runs.
 
 **Service Layer:** `AssignmentService` orchestrates synchronization logic and ensures idempotent updates using `HashSet` based comparisons.
 
@@ -43,7 +51,7 @@ src/main/java/com/alexdamolidis/
 ├── ai/         (LLM integration and AI enrichment services)
 ├── model/      (Semester, Course, Assignment, and Attachment POJOs)
 ├── parser/     (HTML sanitization and text normalization utilities)
-├── repository/ (Local JSON persistence and state rehydration)
+├── repository/ (SQLite persistence and SQL schema management)
 ├── service/    (Synchronization logic and duplicate detection)
 ├── util/       (API communication, endpoint configuration, and content extraction helpers)
 └── test/java/  (JUnit 5 and Mockito test suites)
@@ -51,8 +59,9 @@ src/main/java/com/alexdamolidis/
 .cookies.example.txt (Template for Brightspace session cookies)
 .env.example.txt     (Template for required environment variables)
 
-cookies.txt     (Local session storage – git-ignored)
-.env            (Stores LLM API key    - git-ignored)
+tracker.db      (Main relational database - git-ignored)
+cookies.txt     (Local session storage    – git-ignored)
+.env            (Stores LLM API key       - git-ignored)
 ```
 
 ### Data Mapping Strategy
@@ -65,7 +74,7 @@ Integrity Logic: Implements a composite key (orgUnitId + folderId) to guarantee 
 
 ## Setup and Usage
 ### AI Summarization Notice
-The assignment summarization feature sends assignment contents and attachment text to a Large Language Model for summarization, reasoning, and priority score.
+The assignment summarization feature sends assignment contents and attachment text to a Large Language Model for summarization, reasoning, and priority scoring.
 
 Users should be aware that Google's free tier API may store and use submitted content for service improvement. Because course materials may be considered institutional intellectual property, sending this data through the free tier API could violate your school's policies.
 
@@ -73,15 +82,19 @@ To avoid this risk, it is strongly recommended to use a paid API tier or locally
 
 ### Authentication Setup
 
-This project requires a cookies.txt file in the root directory.
+This project requires a cookies.txt file and a .env in the root directory.
 
-Create a cookies.txt file in the project root.
+1. Create a cookies.txt and a .env file in the project root.
 
-Log in to Brightspace in a browser and open Developer Tools (F12).
+2. Log in to Brightspace in a browser and open Developer Tools (F12).
 
-Under Network > Doc, find the home request and copy the full Cookie request header value.
+3. Under Network > Doc, find the home request and copy the full Cookie request header value.
 
-Paste the entire string into the first line of cookies.txt.
+4. Paste the entire string into the first line of cookies.txt.
+
+5. Obtain Google API key.
+
+6. Paste the key into the .env file as indicated in `.env.example.txt`.
 
 Note: Because these are session based cookies, the file must be updated if the server returns a 403 Forbidden status.
 
@@ -103,6 +116,6 @@ mvn exec:java -Dexec.mainClass="com.alexdamolidis.App"
 
  - [x] LLM based assignment summarization and priority scoring
 
- - [ ] Persistent local storage (SQLite integration)
+ - [x] Persistent local storage (SQLite integration)
 
  - [ ] Google Calendar API export

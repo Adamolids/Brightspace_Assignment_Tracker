@@ -96,7 +96,7 @@ This project requires a cookies.txt file and a .env in the root directory.
 
 6. Paste the key into the .env file as indicated in `.env.example.txt`.
 
-Note: Because these are session based cookies, the file must be updated if the server returns a 403 Forbidden status.
+Note: Brightspace's official OAuth 2.0 requires institutional admin approval and cannot be self registered by students. To enable student level access, this project uses session-based cookie authentication as a workaround. The cookies.txt file must be refreshed if the server returns a 403 Forbidden response.
 
 ### Multi Institution Compatibility
 

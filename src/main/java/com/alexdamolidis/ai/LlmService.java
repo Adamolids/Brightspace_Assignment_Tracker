@@ -5,7 +5,6 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.time.LocalDate;
 
 import com.alexdamolidis.model.Assignment;
 import com.alexdamolidis.model.Attachment;
@@ -25,27 +24,31 @@ public class LlmService {
         "1. Eligibility and Restrictions: \n" +
         "- Scan the text for specific audience restrictions (e.g., 'Only for transfer students', 'Requires work permit', 'International students only').\n" +
         "- IF a restriction exists, it MUST be the very first sentence of the summary.\n" +
-        "- IF NO restriction exists, do NOT mention eligibility, start the summary directly with the assignment goals.\n\n" +        
-        "2. Complexity Signals (1-3): " + 
-        "- High (3)  : Keywords like 'Final', 'Implementation', 'Group Work', or very long instructions. \n" +
+        "- IF NO restriction exists, do NOT mention eligibility, start the summary directly with the assignment goals.\n" +   
+        "- IF the due date is 5 or more days before today's date: \n" +
+        "- Priority MUST be 0 \n" +
+        "- Summary MUST clearly state the assignment can no longer be submitted. \n" +
+        "- First determine a complexity score (1–3), then determine priority.\n\n"  +   
+        "2. Complexity Signals (1-3): \n" + 
+        "- High   (3): Keywords like 'Final', 'Implementation', 'Group Work', or very long instructions. \n" +
         "- Medium (2): Keywords like 'Lab', 'Report', 'Documentation', 'Case Study. \n' " +
-        "- Low (1)   : Keywords like 'Quiz', 'Discussion', 'Reflection', 'Check in'. \n\n" +
-        "3. Priority Logic (1-4): " +
-        "- 4: Due < 2 days OR " +
-        "- 3: Due 3-7 days OR Complexity 3.\n" +
-        "- 2: Due 8-14 days OR Complexity 2.\n" + 
-        "- 1: Everything else." +
+        "- Low    (1): Keywords like 'Quiz', 'Discussion', 'Reflection', 'Check in', 'Contract'. \n\n" +
+        "3. Priority Logic (0-4, evaluate in order, first match wins): \n" +
+        "- 0: Days Until Due <= -5 \n" +
+        "- 4: Days Until Due <= 2 days \n" +
+        "- 3: Days Until Due <= 7 days OR Complexity == 3.\n" +
+        "- 2: Days Until Due <= 14 days OR Complexity == 2.\n" + 
+        "- 1: Everything else. \n\n" +
         "4. Output Format: \n" +
         "Return ONLY: {\"priority\": int, \"reasoning\": string, \"llmSummary\": string} \n\n";
 
 
-        /**
-         * Constructs a formatted text prompt containing the assignment details and attachments.
-         * @param assignment assignment The assignment object containing raw data from Brightspace.
-         * @return A formatted string ready to be sent to the LLM.
-         */
+    /**
+     * Constructs a formatted text prompt containing the assignment details and attachments.
+     * @param assignment assignment The assignment object containing raw data from Brightspace.
+     * @return A formatted string ready to be sent to the LLM.
+     */
     public String buildPrompt(Assignment assignment){
-        String today = LocalDate.now().toString();
         StringBuilder attachmentsBuilder = new StringBuilder();
 
         if(assignment.getAttachments() != null){
@@ -58,14 +61,12 @@ public class LlmService {
             }
         }
         return String.format(
-            "Today's Date: %s \n" +
+            "Days Until Due: %s \n" +
             "Assignment Name: %s \n" +
-            "Due Date: %s \n" +
             "Instructions: %s \n" +
             "Attachment Data: \n %s",
-            today,
+            assignment.getDaysUntilDue(),
             assignment.getName(),
-            assignment.getDueDate(),
             assignment.getInstructionText(),
           (!attachmentsBuilder.toString().isEmpty() ? attachmentsBuilder.toString() : "No Attachments")
         );

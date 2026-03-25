@@ -14,9 +14,9 @@ public class StringParser {
      * seperates, creates, and sets cookie settings(path, domain, version)
      * for each cookie provided.
      * 
-     * @param cookieString  String containing all session cookie data
+     * @param cookieString String containing all session cookie data
      * 
-     * @returns cookies ArrayList containing all session cookies
+     * @return cookies ArrayList containing all session cookies
      */
     public static List<HttpCookie> parseCookies(String cookieString){
         List<HttpCookie> cookies = new ArrayList<>();
@@ -39,7 +39,7 @@ public class StringParser {
     /**
      * utilizes jsoup to remove all html tags from a String.
      *
-     * @param htmlText  String with html tags that should be removed
+     * @param htmlText String with html tags that should be removed
      * 
      * @return cleaned String with no html tags
     */

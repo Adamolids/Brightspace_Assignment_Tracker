@@ -43,11 +43,24 @@ class AssignmentServiceTest {
         String validJson = """
             {
                 "Items": [
-                    { "orgUnitId": "101" },
-                    { "orgUnitId": "202" }
+                    {
+                        "OrgUnit": {
+                            "Id": "101",
+                            "Name": "Course101",
+                            "Code": "12345678"
+                        }
+                    },                          
+                    {                           
+                        "OrgUnit": {
+                            "Id": "202",        
+                            "Name": "Course202",
+                            "Code": "87654321"  
+                        }
+                    }
                 ]
             }
             """;
+
         when(scraper.sendGetRequest(anyString())).thenReturn(validJson);
 
         assignmentService.checkForNewCourses(semester);

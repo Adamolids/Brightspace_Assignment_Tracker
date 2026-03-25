@@ -9,6 +9,8 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 
+import com.alexdamolidis.exception.AttachmentProcessingException;
+import com.alexdamolidis.exception.BrightspaceSyncException;
 import com.alexdamolidis.service.SessionService;
 
 public class BrightspaceClient {
@@ -16,7 +18,6 @@ public class BrightspaceClient {
     private final CookieManager cookieManager;
     private final HttpClient httpClient;
     private final SessionService sessionService;
-
 
     /**
      * Initializes a new BrightspaceClient instance. Sets up a CookieManager and HttpClient with appropriate settings,
@@ -33,7 +34,7 @@ public class BrightspaceClient {
     }
 
     /**
-     * Contructor only for testing requests
+     * Contructor only for testing, dependency injection.
      */
     public BrightspaceClient(HttpClient httpClient, SessionService sessionService){
         this.httpClient = httpClient;
@@ -42,73 +43,69 @@ public class BrightspaceClient {
     }
 
     /**
-     * sends a GET request to specified URL and returns the response body.
+     * sends a GET request to specified URL and returns the response body. Utilizes 
+     * executeWithRetry for exponential backoff on 429 status code.
      * 
-     * @param url the destination URL for the GET request.
-     * 
-     * @returns body of response as a String.
-     * 
-     * @throws RuntimeException If a network error occurs, the request is interrupted,
-     *      the server returns a non 200 status code, or the response is not a valid JSON.
+     * @param url the destination URL for the GET request 
+     * @return body of response as a String
+     * @throws BrightspaceSyncException if a network error occurs, or the response is not a valid JSON
+     * @throws RuntimeException if the request thread is interrupted
      */
     public String sendGetRequest(String url) {
-        try {
-            HttpRequest request = HttpRequest.newBuilder().uri(URI.create(url)).header("Accept", "application/json").GET().build();
-            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString()); //
 
-            int status = response.statusCode();
-            if (status != 200) {
-                switch (status) {
-                case 401 -> throw new RuntimeException("401 Unauthorized: Session is invalid or cookies have expired.");
-                case 403 -> throw new RuntimeException("403 Forbidden: You do not have permission to access this resource.");
-                case 429 -> throw new RuntimeException("429 Too Many Requests: Rate limit exceeded. Slow down the sync frequency.");
-                case 404 -> throw new RuntimeException("404 Not Found: The API endpoint is incorrect. Check URL: " + url);
-                default  -> throw new RuntimeException("Brightspace returned an unexpected HTTP " + status);
+        HttpRequest request = HttpRequest.newBuilder().uri(URI.create(url)).header("Accept", "application/json").GET().build();
+        
+        return RetryUtility.executeWithRetry(() -> {
+            try {
+                HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+                HttpValidator.validate(response, "Brightspace API");
+
+                String contentType = response.headers().firstValue("Content-Type").orElse("");
+                if (!contentType.contains("application/json")) {
+                    throw new BrightspaceSyncException("Expected JSON but received: " + contentType + ". Please check session"); 
                 }
+
+                return response.body();
+
+            } catch (IOException e) {
+                throw new BrightspaceSyncException("Network failure while calling: " + url, e);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException("Request was interrupted", e);
             }
-
-            String contentType = response.headers().firstValue("Content-Type").orElse("");
-            if (!contentType.contains("application/json")) {
-                throw new RuntimeException("Expected JSON but received: " + contentType + ". Please check session"); //
-            }
-
-            return response.body();
-
-        } catch (IOException e) {
-            throw new RuntimeException("Network failure while calling: " + url, e);
-        } catch (InterruptedException e) {
-            throw new RuntimeException("Request was interrupted", e);
-        }
+        }, "Brightspace API");
     }
 
     /**
      * Sends a GET request to downlaod binary content(attachments). Accepts any content type.
      * 
      * @param url The destination URL for the downlaod.
-     * 
      * @return array of bytes comprised of body contents from response.
-     * 
-     * @throws RuntimeException If the network call fails, the request is interrupted,
-     * or the server returns a non 200 status code.
+     * @throws AttachmentProcessingException if a network error occurs, or the response is not a valid JSON
+     * @throws RuntimeException if the request thread is interrupted
      */
     public byte[] downloadAttachment(String url){
-        try{
-            HttpRequest request = HttpRequest.newBuilder().uri(URI.create(url)).GET().build();
 
-            HttpResponse<byte[]> response = httpClient.send(request, HttpResponse.BodyHandlers.ofByteArray());
+        HttpRequest request = HttpRequest.newBuilder().uri(URI.create(url)).GET().build();
 
-            if (response.statusCode() != 200) {
-                throw new RuntimeException("Error while fetching attachment: " + response.statusCode());
+        return RetryUtility.executeWithRetry( () -> {
+            try{
+                HttpResponse<byte[]> response = httpClient.send(request, HttpResponse.BodyHandlers.ofByteArray());
+
+                HttpValidator.validate(response, "Brightspace API");
+
+                return response.body();
+
+            }catch(IOException e){
+                throw new AttachmentProcessingException("Network error during attachment download from: " + url, e);
+
+            }catch(InterruptedException e){
+                Thread.currentThread().interrupt();
+                throw new RuntimeException("Download was interrupted for URL: " + url, e);
             }
-            return response.body();
-
-        }catch(IOException e){
-            throw new RuntimeException("Network error during attachment download from: " + url, e);
-
-        }catch(InterruptedException e){
-            throw new RuntimeException("Download was interrupted for URL: " + url, e);
-        }
-    }
+        }, "Brightspace API");
+    }    
 
     public HttpClient getHttpClient() {
         return this.httpClient;

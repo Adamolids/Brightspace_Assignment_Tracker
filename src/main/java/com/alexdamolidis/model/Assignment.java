@@ -26,6 +26,7 @@ public class Assignment {
 
     @JsonProperty("Attachments")
     private List<Attachment> attachments = new ArrayList<>();
+    
     private String instructionText;
 
     @JsonProperty("llmSummary")
@@ -37,7 +38,7 @@ public class Assignment {
     @JsonProperty("reasoning")
     private String reasoning;
 
-    private Boolean isSyncedToCalendar = false;
+    private String calendarEventId;
 
     @JsonProperty("CustomInstructions")
     private void unpackInstructions(Map<String, Object> custom){
@@ -116,12 +117,12 @@ public class Assignment {
         return priority;
     }
 
-    public Boolean getIsSyncedToCalendar(){
-        return isSyncedToCalendar;
+    public String getCalendarEventId(){
+        return calendarEventId;
     } 
 
-    public void setIsSyncedToCalendar(Boolean isSyncedToCalendar){
-        this.isSyncedToCalendar = isSyncedToCalendar;
+    public void setCalendarEventId(String calendarEventId){
+        this.calendarEventId = calendarEventId;
     }
 
     public boolean updateNameAndDateProperties(Assignment newAssign){

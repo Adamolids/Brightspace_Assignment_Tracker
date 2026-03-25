@@ -1,9 +1,8 @@
 # Brightspace Assignment Tracker
 
-A Java 17 synchronization utility for the Brightspace (D2L) platform.  
-This tool automates the retrieval of course metadata and assignment folders by interfacing with the platform’s REST API endpoints, then leverages a Large Language Model (Gemini API) to enrich raw coursework data with AI generated summaries, reasoning, and intelligent priority scoring.
+Keeping track of assignment deadlines across multiple courses can quickly become overwhelming.
 
----
+Brightspace Assignment Tracker automatically syncs your assignments from Brightspace, enriches each one with an AI generated summary and priority score, and pushes them directly to Google Calendar, so your deadlines are always organized without any manual entry.
 
 ## Architecture and Evolution
 
@@ -17,30 +16,67 @@ As the project evolved, the focus expanded beyond simple data retrieval:
 
 - API responses are mapped into internal domain models to decouple the application from external schema changes.
 - A repository layer was introduced to hydrate previously synchronized data from local JSON storage, enabling incremental synchronization across runs.
-- Synchronization logic was redesigned to be idempotent, using composite keys (`orgUnitId` + `folderId`) and `HashSet` based comparisons to prevent duplicate entries across repeated runs.
+- Synchronization logic was redesigned to be idempotent, using `orgUnitId` for course deduplication and `folderId` as a unique assignment key to prevent duplicate entries across repeated runs.
 - Unit tests were later introduced using JUnit 5 and Mockito to validate synchronization behavior and edge cases.
 
 ### Transition to Relational Persistence
 
-The most recent evolution replaced local JSON storage with a SQLite backed repository, improving data integrity and enabling more robust synchronization.
+The recent evolution replaced local JSON storage with a SQLite backed repository, improving data integrity and enabling more robust synchronization.
 
 - Atomic Saves: The sync pipeline now gathers all required data (API metadata and LLM enrichment) before performing a single final upsert, preventing partial writes and reducing the risk of database corruption.
 - Timezone Awareness: Migration from `LocalDateTime` to `OffsetDateTime` ensures assignment deadlines remain accurate regardless of system timezone.
 - Hallucination Safeguards: `daysUntilDue` is now computed in application code instead of by the LLM, preventing hallucinated values.
 
-### Current Architecture
+### Implementation of Google Calendar Sync
 
-The current version follows a layered architecture with clear separation of concerns:
+With assignment data cleaned, enriched, and persisted locally, the next step was extending the pipeline to sync enriched assignment data into Google Calendar.
 
-**Network Layer:** `BrightspaceClient` handles session based authentication and raw HTTP communication.
+- Self Healing Recovery: Each event is tagged with a private extended property containing its Brightspace `folderId`. This allows the system to reconcile existing events even when the local database is lost. This also allows us to easily generate new LLM enrichment, by deleting the database file, we can get new summaries and priorities while avoiding duplication of calendar events.
+- Tombstoning: If a calendar event exists in Google Calendar but is no longer present in Brightspace, such as when a professor removes or closes an assignment, the event is marked as "[OLD]" rather than deleted outright, preserving the user's deadline history.
+- Idempotent Updates: Before patching an event, the sync compares the remote state against expected values for summary, description, timestamps, and colorId. Updates only take place when a difference is detected, minimizing unnecessary API calls.
+- Urgency Color Coding: Event color is derived from `daysUntilDue` at sync time rather than priority. Assignments are only sent to the LLM once, minimizing API token consumption. Using `daysUntilDue` ensures the event color is revaluated on each run.
 
-**Repository Layer:** `SemesterRepository` persists and hydrates assignment data from the local SQLite database, enabling incremental synchronization across runs.
+## Mermaid Flow Chart
+```mermaid
+flowchart TD
+    START([▶ Start])
 
-**Service Layer:** `AssignmentService` orchestrates synchronization logic and ensures idempotent updates using `HashSet` based comparisons.
+    START --> A1
 
-**AI Layer:** `LlmService` enriches assignments with AI generated summaries, reasoning, and priority scores by constructing structured prompts, communicating with the Gemini API, and mapping JSON responses back into the domain model.
+    A1[/Load .env + cookies.txt/] --> A2[Init HTTP Client + Cookie Store]
+    A2 --> A3[(SQLite Database)]
 
----
+    A3 --> B1
+
+    B1{Local data<br/>exists?}
+    B1 -->|No| B2[/Full Sync<br/>Fetch all courses + assignments<br/>Download + extract attachments/]
+    B1 -->|Yes| B3[/Smart Sync<br/>Diff courses + assignments<br/>Download + extract attachments for new/]
+
+    B2 & B3 --> C1
+
+    C1[Filter eligible assignments<br/>credit-bearing · has due date · not yet enriched] --> C2[/Build prompt<br/>Send to Gemini API/]
+    C2 --> C3[Map response onto Assignment<br/>priority · reasoning · llmSummary]
+
+    C3 --> D1
+
+    D1[(Upsert semester → courses<br/>→ assignments → attachments)]
+
+    D1 --> E1
+
+    E1[OAuth2 Authentication] --> E2[/Fetch existing tracked events<br/>indexed by folderId/]
+    E2 --> D2{Credit-bearing<br/>course with<br/>assignments?}
+    D2 -->|No| END
+    D2 -->|Yes| E3{Event state?}
+
+    E3 -->|New| E4[/Insert event/]
+    E3 -->|Changed| E5[/Patch event/]
+    E3 -->|Up to date| E6[Skip]
+    E3 -->|Orphaned| E7[/Tombstone as OLD/]
+
+    E4 & E5 & E7 --> E8[Batch save new event IDs to DB]
+
+    E8 & E6 --> END([✅ Sync Complete])
+```
 
 ## Technical Implementation
 
@@ -49,19 +85,24 @@ The current version follows a layered architecture with clear separation of conc
 ```text
 src/main/java/com/alexdamolidis/
 ├── ai/         (LLM integration and AI enrichment services)
+├── calendar/   (Calendar sync setup and logic)
+├── exception/  (Custom exceptions for different categories of failures)
 ├── model/      (Semester, Course, Assignment, and Attachment POJOs)
 ├── parser/     (HTML sanitization and text normalization utilities)
 ├── repository/ (SQLite persistence and SQL schema management)
 ├── service/    (Synchronization logic and duplicate detection)
-├── util/       (API communication, endpoint configuration, and content extraction helpers)
+├── util/       (API communication + validation, endpoint configuration, and content extraction helpers)
+
+src\test
 └── test/java/  (JUnit 5 and Mockito test suites)
 
 .cookies.example.txt (Template for Brightspace session cookies)
 .env.example.txt     (Template for required environment variables)
 
 tracker.db      (Main relational database - git-ignored)
-cookies.txt     (Local session storage    – git-ignored)
-.env            (Stores LLM API key       - git-ignored)
+cookies.txt     (Local session storage    - git-ignored)
+.env            (Stores Gemini API key, Google Calendar Id, Semester name - git-ignored)
+googleAuth.json (Google OAuth credentials - git-ignored)
 ```
 
 ### Data Mapping Strategy
@@ -70,7 +111,7 @@ The Brightspace API returns large, nested objects. To simplify processing, I lev
 
 Credit Based Filtering: Uses the _VC marker in course codes to differentiate credit bearing courses from non academic resources. Since both may contain assignments, this ensures only relevant coursework is processed.
 
-Integrity Logic: Implements a composite key (orgUnitId + folderId) to guarantee assignment uniqueness and maintain consistent state across repeated synchronization runs.
+Integrity Logic: Uses folderId as a unique assignment key and orgUnitId as a unique course key to guarantee assignment uniqueness and maintain consistent state across repeated synchronization runs.
 
 ## Setup and Usage
 ### AI Summarization Notice
@@ -81,32 +122,89 @@ Users should be aware that Google's free tier API may store and use submitted co
 To avoid this risk, it is strongly recommended to use a paid API tier or locally hosted LLM where submitted data is not retained or used for training.
 
 ### Authentication Setup
+This project integrates three distict services. Please follow the steps below to configure your local environment.
 
-This project requires a cookies.txt file and a .env in the root directory.
+### 1. Brightspace Session Access
+Because students cannot self register for official Brightspace OAuth without admin approval, this project uses session based cookie authentication.
 
-1. Create a cookies.txt and a .env file in the project root.
+    1. Log in to Brightspace in your browser.
 
-2. Log in to Brightspace in a browser and open Developer Tools (F12).
+    2. Open Developer Tools(F12) -> Network -> Doc.
 
-3. Under Network > Doc, find the home request and copy the full Cookie request header value.
+    3. Refresh the page, select the home request, and copy the Cookie request header value.
 
-4. Paste the entire string into the first line of cookies.txt.
+    4. Create a cookies.txt file in the project root and paste the entire string into the first line.
 
-5. Obtain Google API key.
+### 2. Google Gemini AI Enrichment
 
-6. Paste the key into the .env file as indicated in `.env.example.txt`.
+    1. Obtain an API key from Google AI Studio.
 
-Note: Brightspace's official OAuth 2.0 requires institutional admin approval and cannot be self registered by students. To enable student level access, this project uses session-based cookie authentication as a workaround. The cookies.txt file must be refreshed if the server returns a 403 Forbidden response.
+    2. Create a .env file in the project root (see .env.example).
+
+    3. Add your key: API_KEY= yourKeyHere.
+
+
+### 3. Google Calendar API (OAuth 2.0) Setup
+To sync your assignments, you need to create an application in the Google Cloud Console and link it to a specific calendar.
+
+#### Project & API Enablement
+
+    1. Open the Google Cloud Console and log in.
+
+    2. Click New Project (top left). Name it, leave the "Location" as no organization, and click Create. Ensure this new project is selected in the top dropdown.
+
+    3. In the top search bar, search for Google Calendar API and select it.
+
+    4. Click Enable.
+
+#### OAuth Consent Configuration
+    5. In the left sidebar, navigate to APIs & Services → OAuth consent screen.
+
+    6. Select External as the User Type and click Create.
+
+    7. Fill in the required fields (App name, User support email, Developer contact email) and click Save and Continue.
+
+    8. On the Test Users screen, click Add Users and add your own Google email address. (Crucial: If you skip this, the app will silently fail to authenticate). Click Save and Continue.
+
+#### Generating Credentials
+    9. In the left sidebar, navigate to APIs & Services → Credentials.
+
+    10. Click + Create Credentials at the top and select OAuth 2.0 Client ID.
+
+    11. Under "Application type", select Desktop App, name it, and click Create.
+
+    12. Click Download JSON on the resulting dialog box.
+
+    13. Rename the downloaded file to googleAuth.json and place it in the root directory of this project.
+
+#### Linking Your Calendar
+    14. Open Google Calendar in your browser.
+
+    15. Find the calendar you want to sync to, click the three dots next to it ⋮ → Settings and sharing.
+
+    16. Scroll down to the "Integrate calendar" section and copy the Calendar ID (it often looks like an email address).
+
+    17. Add it to your .env file as: GOOGLE_CALENDAR_ID=yourCalendarIdHere
+
+First Run Authorization:
+On the very first execution, a browser window will open asking you to authorize the app. Because this is a local developer app, Google will show a "Google hasn’t verified this app" warning. Click Advanced → Go to [Your App Name] (unsafe) to proceed. A tokens/ directory will be created automatically to cache your credentials for future runs.
+
 
 ### Multi Institution Compatibility
 
 While configured for the D2L "Slate" environment, this tool can be adapted for other Brightspace instances.
 Modify the EndpointBuilder class to update the base URL or API version string to match your institution’s Brightspace domain.
 
+Slate uses "_VC" in the Course Code to indicate whether or not a course is credit bearning. If your school uses a different 
+indicator, you will have all courses set to: worth credits. This means running non credit bearing assignments through the llm
+for enrichment and having them synced to your calendar. 
+
+To adapt this filter, modify the `unpackOrgUnit` method in the `Course` model to match your institution's indicator.
+
 ### Execution Commands
-mvn clean compile
-mvn test
-mvn exec:java -Dexec.mainClass="com.alexdamolidis.App"
+    mvn compile          # compile the project 
+    mvn test             # run the test suite 
+    mvn exec:java        # run the application  
 
 ## Roadmap
 
@@ -118,4 +216,10 @@ mvn exec:java -Dexec.mainClass="com.alexdamolidis.App"
 
  - [x] Persistent local storage (SQLite integration)
 
- - [ ] Google Calendar API export
+ - [x] Logger implementations
+
+ - [x] Google Calendar API export
+
+ - [ ] Demo mode to run the application with pre loaded data
+
+ - [ ] Refactor AssignmentService to remove redundancies

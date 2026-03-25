@@ -9,21 +9,28 @@ import java.sql.Statement;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.alexdamolidis.exception.DatabaseConnectionException;
+import com.alexdamolidis.exception.DatabaseTransactionException;
 import com.alexdamolidis.model.Assignment;
 import com.alexdamolidis.model.Attachment;
 import com.alexdamolidis.model.Course;
 import com.alexdamolidis.model.Semester;
 
 public class SqliteRepository {
+    private static final Logger logger = LoggerFactory.getLogger(SqliteRepository.class);
     private final String dbUrl;
 
     public SqliteRepository(){
         this.dbUrl = "jdbc:sqlite:tracker.db";
         initDatabase();
-
     }
 
+    //constructor for tests/demo with dependency injection
     public SqliteRepository(String dbUrl){
         this.dbUrl = dbUrl;
         initDatabase();
@@ -33,10 +40,10 @@ public class SqliteRepository {
      * Initializes the repository by creating the semester, course, assignment, and attachments tables. 
      * invoked by SqliteRepository constructor.
     */
-    public void initDatabase(){
+    private void initDatabase(){
         try(Connection connection = DriverManager.getConnection(dbUrl);
             Statement statement = connection.createStatement()){
-            System.out.println("Initializing repo...");
+            logger.info("Initializing database at path = {}", dbUrl);
 
             String createSemester= """
                 CREATE TABLE IF NOT EXISTS semester(
@@ -62,7 +69,7 @@ public class SqliteRepository {
                 llmSummary TEXT,
                 priority INTEGER,
                 reasoning TEXT,
-                isSyncedToCalendar INTEGER DEFAULT 0,
+                calendarEventId TEXT,
                 FOREIGN KEY(orgUnitId) REFERENCES course(orgUnitId));
             """;
 
@@ -82,14 +89,15 @@ public class SqliteRepository {
             statement.execute(createAttachment);
 
         }catch(SQLException e){
-            throw new RuntimeException("Failed to initialize the SQLite database. " + e);
+            throw new DatabaseConnectionException("Failed to initialize the SQLite database. " + e);
         }
     }
     /**
      * Saves all semester data to the Sqlite database, does not update the semester name on conflict.
-     * @param semester Semester object to be saved to the database.
-     * @throws RuntimeException If the database transaction fails. If an SQLException occurs,
-     * the transaction is rolled back before this exception is thrown.
+     * 
+     * @param semester object to be saved to the database.
+     * @throws DatabaseTransactionException If the trascation fails, rolls back before throwing
+     * @throws DatabaseConnectionException If a connection error ocurrs 
      */
     public void saveSemester(Semester semester){
         String insertSemester = """
@@ -108,27 +116,29 @@ public class SqliteRepository {
                         saveCourse(connection, course, semester.getName());
                     }
                 }
+                logger.info("Saving semester: {} with {} courses.", semester.getName(), semester.getCourses().size());
                 connection.commit();
 
             }catch(SQLException e){
                 connection.rollback();
-                throw new RuntimeException("Transaction failed, rolling back. " + e);
+                throw new DatabaseTransactionException("Transaction failed, rolling back. " + e);
             }
         }catch(SQLException e){
-            throw new RuntimeException("Database connection error: " + e);
+            throw new DatabaseConnectionException("Database connection error: " + e);
         }
     }
 
     /**
      * Saves a course object to the database. Brightspace should not update course data in the middle of 
      * a semester, so data is not updated on conflict.
+     * 
      * @param connection Database connection opened by saveSemester.
      * @param course Course object to be saved.
      * @param semesterName Crrent semester name (semester table primary key)
      * @throws SQLException If a database access error occurs. This exception is 
      * bubbled up to the caller to trigger a transaction rollback.
      */
-    public void saveCourse(Connection connection, Course course, String semesterName)throws SQLException{
+    private void saveCourse(Connection connection, Course course, String semesterName)throws SQLException{
         String insertCourse = """
                 INSERT INTO course(orgUnitId, semesterName, name, isWorthCredits)
                 VALUES(?, ?, ?, ?)
@@ -150,15 +160,16 @@ public class SqliteRepository {
 
     /**
      * Saves an Assignment object to the database. Updates all fields except folderId on conflict.
+     * 
      * @param connection Database connection passed by saveCourse.
      * @param assignment Assignment object to be saved.
      * @param orgUnitId Course's orgUnitId that this assignment belongs to (Course primary key).
      * @throws SQLException If a database access error occurs. This exception is 
      * bubbled up to the caller to trigger a transaction rollback.
      */
-    public void saveAssignment(Connection connection, Assignment assignment, String orgUnitId)throws SQLException{
+    private void saveAssignment(Connection connection, Assignment assignment, String orgUnitId)throws SQLException{
         String insertAssignment = """
-                INSERT INTO assignment(folderId, orgUnitId, name, dueDate, instructionText, llmSummary, priority, reasoning, isSyncedToCalendar)
+                INSERT INTO assignment(folderId, orgUnitId, name, dueDate, instructionText, llmSummary, priority, reasoning, calendarEventId)
                 VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(folderId) DO UPDATE SET
                     name               = excluded.name,
@@ -167,7 +178,7 @@ public class SqliteRepository {
                     llmSummary         = excluded.llmSummary,
                     priority           = excluded.priority,
                     reasoning          = excluded.reasoning,
-                    isSyncedToCalendar = excluded.isSyncedToCalendar;
+                    calendarEventId    = excluded.calendarEventId;
                 """;
         try(PreparedStatement assignmentInsertStmt = connection.prepareStatement(insertAssignment)){
             assignmentInsertStmt.setString (1, assignment.getFolderId());
@@ -178,7 +189,7 @@ public class SqliteRepository {
             assignmentInsertStmt.setString (6, assignment.getLlmSummary());
             assignmentInsertStmt.setInt    (7, assignment.getPriority());
             assignmentInsertStmt.setString (8, assignment.getReasoning());
-            assignmentInsertStmt.setBoolean(9, assignment.getIsSyncedToCalendar());
+            assignmentInsertStmt.setString (9, assignment.getCalendarEventId());
             assignmentInsertStmt.executeUpdate();
         }
         if(assignment.getAttachments() != null && !assignment.getAttachments().isEmpty()){
@@ -190,13 +201,14 @@ public class SqliteRepository {
 
     /**
      * Saves Attachment to database. Updates all fields but fileId on conflict.
+     * 
      * @param connection Database connection passes by saveAssignment.
      * @param attachment Attachment object to be saved.
      * @param folderId Assignment's folderId this attachment belongs to (Assignment primary key).
      * @throws SQLException If a database access error occurs. This exception is 
      * bubbled up to the caller to trigger a transaction rollback.
      */
-    public void saveAttachment(Connection connection, Attachment attachment, String folderId)throws SQLException{
+    private void saveAttachment(Connection connection, Attachment attachment, String folderId)throws SQLException{
         String insertAttachment = """
                 INSERT INTO attachment(fileId, folderId, fileName, fileSize, attachmentText)
                 VALUES(?, ?, ?, ?, ?)
@@ -217,9 +229,10 @@ public class SqliteRepository {
 
     /**
      * Loads all semester data from repository .
+     * 
      * @param semesterName The name of the semester to load.
      * @return The populated Semester object, or null if not found.
-     * @throws RuntimeException If a database error occurs during the selection or 
+     * @throws DatabaseConnectionException If a database error occurs during the selection or 
      * rehydration of the Semester object.
      */
     public Semester loadSemester(String semesterName){
@@ -238,21 +251,23 @@ public class SqliteRepository {
 
                 semester.setCourses(getCoursesForSemester(connection, semesterName));
 
+                logger.info("loading the semester data from {}", dbUrl);
                 return semester;
             }
         }catch(SQLException e){
-            throw new RuntimeException("Error loading semester: " + e);
+            throw new DatabaseConnectionException("Error loading semester: " + e);
         }
     }
 
     /**
      * Retrieves all courses associated with a specific semester.
+     * 
      * @param connection The active database connection.
      * @param semesterName The name of the semester.
      * @return A list of Course objects.
      * @throws SQLException If a database access error occurs.
      */
-    public List<Course> getCoursesForSemester(Connection connection, String semesterName)throws SQLException{
+    private List<Course> getCoursesForSemester(Connection connection, String semesterName)throws SQLException{
         List<Course> courses    = new ArrayList<>();
         String selectCoursesSql = "SELECT * FROM course WHERE semesterName = ?"; 
 
@@ -275,12 +290,13 @@ public class SqliteRepository {
 
     /**
      * Retrieves all Assignemnts associated with a specific Course.
+     * 
      * @param connection The active database connection.
      * @param orgUnitId Unit Id of course these assignments belong to.
      * @return List of assignments.
      * @throws SQLException If a database access error occurs.
      */
-    public List<Assignment> getAssignmentsForCourse(Connection connection, String orgUnitId)throws SQLException{
+    private List<Assignment> getAssignmentsForCourse(Connection connection, String orgUnitId)throws SQLException{
         List<Assignment> assignments = new ArrayList<>();
         String selectAssignmentsSql  = "SELECT * FROM assignment WHERE orgUnitId = ?";
 
@@ -300,7 +316,7 @@ public class SqliteRepository {
                     assignment.setLlmSummary        (assignmentResult.getString("llmSummary"));
                     assignment.setPriority          (assignmentResult.getInt("priority"));
                     assignment.setReasoning         (assignmentResult.getString("reasoning"));
-                    assignment.setIsSyncedToCalendar(assignmentResult.getInt("isSyncedToCalendar") == 1);
+                    assignment.setCalendarEventId   (assignmentResult.getString("calendarEventId"));
 
                     assignment.setAttachments(getAttachmentsForAssignment(connection, assignment.getFolderId()));
                     assignments.add(assignment);
@@ -312,12 +328,13 @@ public class SqliteRepository {
 
     /**
      * Retrieves all Attachments associated with a specific Assignment.
+     * 
      * @param connection The active database connection.
      * @param folderId Folder Id of Assignment that these Attachments belong to.
      * @return List of Attachments.
      * @throws SQLException If a database access error occurs.
      */
-    public List<Attachment> getAttachmentsForAssignment(Connection connection, String folderId)throws SQLException{
+    private List<Attachment> getAttachmentsForAssignment(Connection connection, String folderId)throws SQLException{
         List<Attachment> attachments = new ArrayList<>();
         String selectAttachmentsSql = "SELECT * FROM attachment WHERE folderId = ?";
 
@@ -338,7 +355,40 @@ public class SqliteRepository {
         return attachments;
     }
 
-    public String getDbUrl(){
-        return dbUrl;
+    /**
+     * Batch updates calendarEventId for multiple assignments in a single transaction.
+     * Called after Google Calendar sync to avoid redundant connection overhead.
+     * 
+     * @param eventIds Map of folderId to calendarEventId pairs to be saved.
+     * @throws DatabaseTransactionException If the trascation fails, rolls back before throwing
+     * @throws DatabaseConnectionException If a connection error ocurrs 
+     */
+    public void saveCalendarEventIds(Map<String, String> eventIds){
+        if(eventIds == null || eventIds.isEmpty())return;
+
+        String updateCalendarEventId = """
+                UPDATE assignment
+                SET calendarEventId = ?
+                WHERE folderId = ?;
+                """;
+
+        try(Connection connection = DriverManager.getConnection(dbUrl)){
+            connection.setAutoCommit(false);
+            try(PreparedStatement updateEventIdStmt = connection.prepareStatement(updateCalendarEventId)){
+                for(Map.Entry<String, String> entry : eventIds.entrySet()){
+                    updateEventIdStmt.setString(1, entry.getValue());
+                    updateEventIdStmt.setString(2, entry.getKey());
+                    updateEventIdStmt.addBatch();
+                }
+                updateEventIdStmt.executeBatch();
+                connection.commit();
+                
+            }catch(SQLException e){
+                connection.rollback();
+                throw new DatabaseTransactionException("Calendar event ID batch update failed, rolling back.", e);
+            }
+        }catch(SQLException e){
+            throw new DatabaseConnectionException("Database connection error during calendar event ID save: ", e);
+        }
     }
 }

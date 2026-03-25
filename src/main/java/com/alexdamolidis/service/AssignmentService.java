@@ -3,10 +3,13 @@ package com.alexdamolidis.service;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-import java.util.Scanner;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.alexdamolidis.exception.TrackerException;
 import com.alexdamolidis.model.*;
 import com.alexdamolidis.parser.StringParser;
 import com.alexdamolidis.repository.SqliteRepository;
@@ -17,6 +20,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 public class AssignmentService {
+    private static final Logger logger = LoggerFactory.getLogger(AssignmentService.class);
     private final ObjectMapper mapper;
     private final BrightspaceClient scraper;
     private final ContentExtractor extractor;
@@ -33,27 +37,13 @@ public class AssignmentService {
     }
 
     /**
-     * accept a semester name from the user for the semester object.
-     * 
-     * @return name 
-     */
-    public String createSemesterName() {
-        Scanner scan = new Scanner(System.in);
-        System.out.print("Please enter the semester you are in: ");
-        String name = scan.nextLine();
-        scan.close();
-        return name;
-    }
-    /**
      * fetch, extract, and assign course data from Brightspace API for a specified semester.
      * 
      * @param semester semester object 
-     * 
      * @return semester object hydrated with course data
-     * 
-     * @throws RuntimeException If the JSON respose cannot be mapped to the Course model.
+     * @throws TrackerException If the JSON respose cannot be mapped to the Course model.
     */
-    public Semester fetchAndMapCourses(Semester semester){
+    private Semester fetchAndMapCourses(Semester semester){
         String coursesJson = scraper.sendGetRequest(EndpointBuilder.buildMyEnrollmentsUrl());
         try{
             BrightspaceWrapper<Course> wrapper = mapper.readValue(coursesJson,
@@ -64,7 +54,7 @@ public class AssignmentService {
             return semester;
 
             }catch(IOException e){
-                throw new RuntimeException("Failed to parse Course data", e);
+                throw new TrackerException("Failed to parse Course data", e);
             }
         }
 
@@ -73,10 +63,9 @@ public class AssignmentService {
      * specified course.
      * 
      * @param course course object
-     * 
-     * @throws RuntimeException If the JSON respose cannot be mapped to the Assignment model.
+     * @throws TrackerException If the JSON respose cannot be mapped to the Assignment model.
      */
-    public void hydrateCourseWithAssignments(Course course){
+    private void hydrateCourseWithAssignments(Course course){
 
         String assignmentsJson = scraper.sendGetRequest(EndpointBuilder.buildAllAssignmentsUrl(course.getOrgUnitId()));
 
@@ -93,7 +82,7 @@ public class AssignmentService {
             }
             course.setAssignments(assignments);
         }catch(IOException e){
-            throw new RuntimeException( course.getName() + " failed to sync. ", e);
+            throw new TrackerException( course.getName() + " failed to sync. ", e);
         }
     }
 
@@ -102,20 +91,15 @@ public class AssignmentService {
      * attachment is larger than 10MB it will be skipped to prevent excesive memory usage or video downloads.
      * 
      * @param assignment assignment object containing attachments.
-     * 
      * @param orgUnitId unique course identifier.
-     * 
-     * @throws AttachmentProcessingException if attachment download or text extraction fails
-     * 
      */
-    public Assignment processAttachments(Assignment assignment, String orgUnitId) {
+    private Assignment processAttachments(Assignment assignment, String orgUnitId) {
         for (Attachment attachment : assignment.getAttachments()) {
 
             if (attachment.getFileSize() > 10 * 1024 * 1024) {
-                System.out.println("Skipping large file: " + attachment.getFileName());
+                logger.warn("Skipping large file: '{}'", attachment.getFileName());
                 continue;
             }
-            try {
                 String url = EndpointBuilder.buildAttachmentUrl(orgUnitId, assignment.getFolderId(),
                         attachment.getFileId());
 
@@ -126,46 +110,39 @@ public class AssignmentService {
 
                     attachment.setAttachmentText(cleanExtractedText);
                 }
-            } catch (AttachmentProcessingException e) {
-                throw new RuntimeException("Failed to process file " + attachment.getFileName() + ": " + e.getMessage());
-            }
         }
         return assignment;
     }
 
 
-    public Semester runFullSync(Semester semester) {
+    private Semester runFullSync(Semester semester) {
         fetchAndMapCourses(semester);
         for (Course course : semester.getCourses()) {
             if (course.getIsWorthCredits()) {
                 hydrateCourseWithAssignments(course);
             }
         }
-        // System.out.println(semester);
         return semester;
     }
 
-    public Semester runSmartSync(Semester semester) {
+    private Semester runSmartSync(Semester semester) {
         checkForNewCourses(semester);
         checkForNewAssignments(semester);
-        // System.out.println(semester);
-
         return semester;
     }
 
-    public Semester sync(){
-        String semesterName = createSemesterName();
-        Semester loadedSemester = repo.loadSemester(semesterName);
+    public Semester sync(String semesterName){
+        Semester existingSemester = repo.loadSemester(semesterName);
 
-        if(loadedSemester == null){
-            System.out.println("No local data detected, running full sync");
+        if(existingSemester == null){
+            logger.info("No local data detected, running full sync");
             Semester semester = new Semester(semesterName);
             runFullSync(semester);
             return semester;
         }else{
-            System.out.println("Local data detected, running smart sync");
-            runSmartSync(loadedSemester);
-            return loadedSemester;
+            logger.info("Local data detected, running smart sync");
+            runSmartSync(existingSemester);
+            return existingSemester;
         }
     }
 
@@ -174,11 +151,10 @@ public class AssignmentService {
      * discovered courses to the semester.
      * 
      * @param semester Semester object.
-     * 
-     * @throws RuntimeException If the JSON respose cannot be mapped to the Course
+     * @throws TrackerException If the JSON respose cannot be mapped to the Course
      * model.
      */
-    public void checkForNewCourses(Semester semester) {
+    void checkForNewCourses(Semester semester) {
         Set<String> existingCourseIds = semester.getCourses().stream()
                                                 .map(Course::getOrgUnitId)
                                                 .collect(Collectors.toSet());
@@ -195,7 +171,7 @@ public class AssignmentService {
                 }
             }
         } catch (IOException e) {
-            throw new RuntimeException("Failed to parse Course data", e);
+            throw new TrackerException("Failed to parse Course data", e);
         }
     }
 
@@ -204,12 +180,11 @@ public class AssignmentService {
      * any newly discovered assignments to the course. Also checks existing assignment 
      * names and dates against new assignment data, updates if new data is different.
      * 
-     * @param semester Semester object
-     * 
-     * @throws RuntimeException If the JSON response cannot be mapped to the
+     * @param semester object to be checked
+     * @throws TrackerException If the JSON response cannot be mapped to the
      * Assignment model.
      */
-    public void checkForNewAssignments(Semester semester) {
+    void checkForNewAssignments(Semester semester) {
         for (Course course : semester.getCourses()) {
             if (!course.getIsWorthCredits())
                 continue;
@@ -221,38 +196,22 @@ public class AssignmentService {
                                                                        .collect(Collectors.toMap(Assignment::getFolderId, a -> a));
                 for (Assignment newAssignmentData : assignmentsFromApi) {                    
                     if (!existingAssignmentsMap.containsKey(newAssignmentData.getFolderId())){
-                        course.addAssignment(newAssignmentData);
 
                         if (newAssignmentData.getAttachments() != null){
                             processAttachments(newAssignmentData, course.getOrgUnitId());
                         }
-                            
+                        course.addAssignment(newAssignmentData);
+
                     }else{
                         Assignment existingAssignment = existingAssignmentsMap.get(newAssignmentData.getFolderId());
                         if (existingAssignment.updateNameAndDateProperties(newAssignmentData)){
-                            System.out.println("Detected change in: " + existingAssignment.getName());
+                            logger.info("Detected change in: '{}'", existingAssignment.getName());
                         }
                     }
                 }
             }catch (IOException e){
-                throw new RuntimeException( course.getName() + " failed to sync. ", e);
+                throw new TrackerException( course.getName() + " failed to sync. ", e);
             }
         }
-    }
-
-    /**
-     * Collects a count of assignments from courses worth credits from semester object.
-     * @param semester Semester object with assignments to be counted.
-     * @return count Count of assignments worth credits.
-     */
-    public int countAssignmentsWorthCredits(Semester semester){
-        int count = 0;
-
-        for(Course course : semester.getCourses()){
-            if(course.getIsWorthCredits() && course.getAssignments() != null){
-                count += course.getAssignments().size();
-            }
-        }
-        return count;
     }
 }

@@ -16,8 +16,6 @@ public class SessionService {
      * clean and set all relevant settings on each cookie, adds cookies to CookieStore.
      * 
      * @param  manager CookieManager object
-     * 
-     * @throws IOException if the cookies.txt file cannot be read.
     */
     public void initializeSession(CookieManager manager){
         String           cookieString = ContentExtractor.readFirstLine("cookies.txt");

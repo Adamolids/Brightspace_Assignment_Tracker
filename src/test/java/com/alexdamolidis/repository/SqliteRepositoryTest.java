@@ -45,7 +45,7 @@ public class SqliteRepositoryTest {
         assignment.setLlmSummary("ThisIsASummary");
         assignment.setPriority(4);
         assignment.setReasoning("its hard");
-        assignment.setIsSyncedToCalendar(false);
+        assignment.setCalendarEventId("101202");
 
         assignments.add(assignment);
         course.setAssignments(assignments);

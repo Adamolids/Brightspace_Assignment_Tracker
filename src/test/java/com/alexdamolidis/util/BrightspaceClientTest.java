@@ -51,8 +51,7 @@ class BrightspaceClientTest {
 	    when(mockResponse.headers()).thenReturn(mockHeaders);
 	    when(mockHeaders.firstValue("Content-Type")).thenReturn(Optional.of("application/json"));
 	
-		OngoingStubbing<HttpResponse<String>> stubbing = when(mockHttpClient.send(any(), any()));
-		stubbing.thenReturn(mockResponse);
+		when(mockHttpClient.<String>send(any(), any())).thenReturn(mockResponse);
 
 	    String result = client.sendGetRequest("https://api.test.com");
 

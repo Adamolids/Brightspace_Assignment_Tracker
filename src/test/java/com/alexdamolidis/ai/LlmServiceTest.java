@@ -13,7 +13,7 @@ public class LlmServiceTest {
     
     @Test
     public void testBuildPromptWithAttachments(){
-        LlmService llmService = new LlmService();
+        LlmService llmService = new LlmService("RandomApiKey!");
         Assignment assignment = new Assignment();
         assignment.setName("TestAssignment1Name");
         
@@ -36,7 +36,7 @@ public class LlmServiceTest {
 
     @Test
     public void testBuildPromptNoAttachments(){
-        LlmService llmService = new LlmService();
+        LlmService llmService = new LlmService("RandomApiKey!");
         Assignment assignment = new Assignment();
         assignment.setName("Check In");
         assignment.setInstructionText("Complete the check in.");
@@ -49,7 +49,7 @@ public class LlmServiceTest {
 
     @Test
     public void testSyncAiResponseToModelValidJson() {
-        LlmService llmService = new LlmService();
+        LlmService llmService = new LlmService("RandomApiKey!");
         Assignment assignment = new Assignment();
         assignment.setName("Backend Integration Lab");
         
@@ -78,7 +78,7 @@ public class LlmServiceTest {
 
     @Test
     public void testSyncAiResponseToModelMissingPriorityDefaultsToZero() {
-        LlmService llmService = new LlmService();
+        LlmService llmService = new LlmService("RandomApiKey!");
         Assignment assignment = new Assignment();
         
         String fakeResponse = """

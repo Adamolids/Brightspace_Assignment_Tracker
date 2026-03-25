@@ -8,7 +8,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class BrightspaceWrapper<T> {
 
-
     @JsonProperty("Items")
     private List<T> items;
 
@@ -18,6 +17,5 @@ public class BrightspaceWrapper<T> {
 
     public List<T> getItems(){
         return items;
-    }
-    
+    }   
 }

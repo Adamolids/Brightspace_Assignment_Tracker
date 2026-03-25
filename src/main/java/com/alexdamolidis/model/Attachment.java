@@ -19,7 +19,6 @@ public class Attachment {
 
     public Attachment(){}
 
-
     public String getFileName() {
         return fileName;
     }
@@ -32,7 +31,6 @@ public class Attachment {
         return fileSize;
     }
 
-
     public void setAttachmentText(String attachmentText) {
         this.attachmentText = attachmentText;
     }
@@ -41,21 +39,17 @@ public class Attachment {
         this.fileName = fileName;
     }
 
-
     public void setFileId(String fileId) {
         this.fileId = fileId;
     }
-
 
     public void setFileSize(int fileSize) {
         this.fileSize = fileSize;
     }
 
-
     public String getAttachmentText(){
         return attachmentText;
     }
-
 
     @Override
     public String toString() {

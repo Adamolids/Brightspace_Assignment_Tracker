@@ -23,3 +23,5 @@ cookies.txt
 /data/
 .env
 *.db
+googleAuth.json
+tokens/

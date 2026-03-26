@@ -1,0 +1,89 @@
+{     
+    "PagingInfo": {
+        "Bookmark": "1020304",
+        "HasMoreItems": false
+    },
+    "Items": [
+        {
+            "OrgUnit": {
+                "Id": 654321,
+                "Type": { 
+                    "Id": 3,
+                    "Code": "Course Offering",
+                    "Name": "Course Offering"
+                },
+                "Name": "Non Credit Bearing Course",
+                "Code": "654321_VC",
+                "HomeUrl": "https://slate.sheridancollege.ca/d2l/home/654321",
+                "ImageUrl": "https://slate.sheridancollege.ca/d2l/api/lp/1.9/courses/654321/image"
+            },
+            "Access": {
+                "IsActive": true,
+                "StartDate": "2020-09-04T04:00:00.000Z",
+                "EndDate": null,
+                "CanAccess": true,
+                "ClasslistRoleName": "Student",
+                "LISRoles": [
+                    "urn:lti:instrole:ims/lis/Student",
+                    "urn:lti:instrole:ims/lis/Learner"
+                ],
+                "LastAccessed": "2026-03-24T02:42:13.547Z"
+            },
+            "PinDate": null
+        },
+        {
+            "OrgUnit": {
+                "Id": 323431,
+                "Type": {
+                    "Id": 3,
+                    "Code": "Course Offering",
+                    "Name": "Course Offering"
+                },
+                "Name": "Sheridan Weight Lifting 101",
+                "Code": "323431",
+                "HomeUrl": "https://slate.sheridancollege.ca/d2l/home/323431",
+                "ImageUrl": "https://slate.sheridancollege.ca/d2l/api/lp/1.9/courses/323431/image"
+            },
+            "Access": {
+                "IsActive": true,
+                "StartDate": "2022-07-21T16:24:00.000Z",
+                "EndDate": null,
+                "CanAccess": true,
+                "ClasslistRoleName": "Student",
+                "LISRoles": [
+                    "urn:lti:instrole:ims/lis/Student",
+                    "urn:lti:instrole:ims/lis/Learner"
+                ],
+                "LastAccessed": "2026-01-15T20:39:15.227Z"
+            },
+            "PinDate": null
+        },
+        {
+            "OrgUnit": {
+                "Id": 987654,
+                "Type": {
+                    "Id": 3,
+                    "Code": "Course Offering",
+                    "Name": "Course Offering"
+                },
+                "Name": "FRUT1020 Fruit Observation & Preparation Course",
+                "Code": "987_654",
+                "HomeUrl": "https://slate.sheridancollege.ca/d2l/home/987654",
+                "ImageUrl": "https://slate.sheridancollege.ca/d2l/api/lp/1.9/courses/987654/image"
+            },
+            "Access": {
+                "IsActive": true,
+                "StartDate": "2026-01-01T05:00:00.000Z",
+                "EndDate": "2028-05-01T03:59:00.000Z",
+                "CanAccess": true,
+                "ClasslistRoleName": "Student",
+                "LISRoles": [
+                    "urn:lti:instrole:ims/lis/Student",
+                    "urn:lti:instrole:ims/lis/Learner"
+                ],
+                "LastAccessed": "2026-03-24T23:23:28.420Z"
+            },
+            "PinDate": null
+        }
+    ]
+}

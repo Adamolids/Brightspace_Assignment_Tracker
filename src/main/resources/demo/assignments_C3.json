@@ -1,0 +1,348 @@
+[
+    {
+        "Id": 1053177,
+        "CategoryId": 1057273,
+        "Name": "Fruit Survey",
+        "CustomInstructions": {
+            "Text": "\r\nFavourite Fruit Assignment Instructions\r\n\r\nPart 1: Complete the Survey\r\n\r\nStep 1: Access the FruitSurvey link: Student Fruit Survey\r\nStep 2: Complete the survey, Take your time and carefully complete the survey. It should take about 15-30 minutes to finish. Reflect on your most favourite fruits as you answer the questions.\r\nStep 3: Check your email for results, after completing the survey, you will receive a copy of the results in your inbox. This may take a few minutes to arrive.\r\n\r\nPart 2: What to Submit\r\n\r\nYou need to submit 1 item:\r\nItem 1: Your FULL Survey ResultsDownload the complete survey results from your email inbox and upload them to this dropbox.\r\n",
+            "Html": "<div style=\"background-color: #003767;color: white;padding: 20px;border-radius: 8px;margin-bottom: 20px;\">\r\n<h2 style=\"margin: 0px;font-size: 24px;text-align: center;\">Favourite Fruit Assignment Instructions</h2>\r\n</div>\r\n<h3 style=\"color: #003767;font-size: 20px;margin-bottom: 15px;border-bottom: 2px solid #00B2CE;padding-bottom: 5px;\">Part 1: Complete the Survey</h3>\r\n<div style=\"border: 1px solid #ddd;border-radius: 8px;padding: 20px;margin-bottom: 20px;\">\r\n<div style=\"margin-bottom: 15px;padding: 15px;background-color: #f9f9f9;border-left: 4px solid #00B2CE;border-radius: 4px;\"><strong style=\"font-size: 18px;\">Step 1: Access the FruitSurvey link</strong><br/>Go to the survey link: <a rel=\"noopener\" href=\"#\" target=\"_blank\" style=\"color: #cf3774;font-weight: bold;\">Student Fruit Survey</a></div>\r\n<div style=\"margin-bottom: 15px;padding: 15px;background-color: #f9f9f9;border-left: 4px solid #00B2CE;border-radius: 4px;\"><strong style=\"font-size: 18px;\">Step 2: Complete the survey,</strong><br/>Take your time and carefully complete the survey. It should take about 15-30 minutes to finish. Reflect on your most favourite fruits as you answer the questions.</div>\r\n<div style=\"padding: 15px;background-color: #f9f9f9;border-left: 4px solid #00B2CE;border-radius: 4px;\"><strong style=\"font-size: 18px;\">Step 3: Check your email for results,</strong><br/>after completing the survey, you will receive a copy of the results in your inbox. This may take a few minutes to arrive.</div>\r\n</div>\r\n<h3 style=\"color: #003767;font-size: 20px;margin-bottom: 15px;border-bottom: 2px solid #00B2CE;padding-bottom: 5px;\">Part 2: What to Submit</h3>\r\n<div style=\"background-color: #f5f5f5;padding: 20px;border: 2px solid #CF3774;border-radius: 8px;margin-bottom: 20px;\">\r\n<p style=\"margin: 0 0 15px 0;font-size: 18px;\"><strong>You need to submit 1 item:</strong></p>\r\n<div style=\"padding: 15px;background-color: white;border-left: 4px solid #CF3774;border-radius: 4px;\"><strong style=\"font-size: 18px;color: #cf3774;\">Item 1: Your FULL Survey Results</strong><br/>Download the complete survey results from your email inbox and upload them to this dropbox.</div>\r\n</div>"
+        },
+        "Attachments": [],
+        "TotalFiles": 0,
+        "UnreadFiles": 0,
+        "FlaggedFiles": 0,
+        "TotalUsers": 0,
+        "TotalUsersWithSubmissions": 0,
+        "TotalUsersWithFeedback": 0,
+        "Availability": null,
+        "IsHidden": false,
+        "Assessment": {
+            "ScoreDenominator": 100.000000000,
+            "Rubrics": [
+                {
+                    "RubricId": 622860,
+                    "Name": "Untitled",
+                    "Description": {
+                        "Text": "",
+                        "Html": ""
+                    },
+                    "RubricType": 1,
+                    "RubricStateId": 0,
+                    "ScoringMethod": 1,
+                    "IsScoreVisibleToAssessedUsers": true,
+                    "CriteriaGroups": [
+                        {
+                            "Name": "Criteria",
+                            "Levels": [
+                                {
+                                    "Id": 7524444,
+                                    "Name": "Yes",
+                                    "Points": 4.000000000
+                                },
+                                {
+                                    "Id": 7524445,
+                                    "Name": "No",
+                                    "Points": 1.000000000
+                                }
+                            ],
+                            "Criteria": [
+                                {
+                                    "Id": 3436474,
+                                    "Name": "Complete",
+                                    "Cells": [
+                                        {
+                                            "Feedback": {
+                                                "Text": "",
+                                                "Html": ""
+                                            },
+                                            "Description": {
+                                                "Text": "",
+                                                "Html": ""
+                                            },
+                                            "Points": null,
+                                            "LevelId": 7524444
+                                        },
+                                        {
+                                            "Feedback": {
+                                                "Text": "",
+                                                "Html": ""
+                                            },
+                                            "Description": {
+                                                "Text": "",
+                                                "Html": ""
+                                            },
+                                            "Points": null,
+                                            "LevelId": 7524445
+                                        }
+                                    ]
+                                }
+                            ],
+                            "LevelSetId": 1710377
+                        }
+                    ],
+                    "OverallLevels": [
+                        {
+                            "Id": 7524447,
+                            "Name": "Pass",
+                            "RangeStart": 4.000000000,
+                            "Description": {
+                                "Text": "",
+                                "Html": ""
+                            },
+                            "Feedback": {
+                                "Text": "",
+                                "Html": ""
+                            }
+                        },
+                        {
+                            "Id": 7524446,
+                            "Name": "Fail",
+                            "RangeStart": 0.000000000,
+                            "Description": {
+                                "Text": "",
+                                "Html": ""
+                            },
+                            "Feedback": {
+                                "Text": "",
+                                "Html": ""
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        "DropboxType": 2,
+        "GroupTypeId": null,
+        "DueDate": "2026-01-12T04:59:59.000Z",
+        "DisplayInCalendar": false,
+        "NotificationEmail": null,
+        "LinkAttachments": [],
+        "ActivityId": null,
+        "IsAnonymous": false,
+        "SubmissionType": 0,
+        "CompletionType": 0,
+        "GradeItemId": 2824095
+    },
+    {
+        "Id": 1053179,
+        "CategoryId": 1057273,
+        "Name": "Fruit Observation Assignment",
+        "CustomInstructions": {
+            "Text": "\r\nFruit Observation Assignment Instructions\r\n\r\nPart 1: Select and Analyze Your Specimen\r\n\r\nStep 1: Choose a fruit specimenSelect a high-stakes fruit (e.g., a Mango, Durian, or Dragonfruit) that is appropriate for your specialization.\r\nStep 2: Analyze the ripeness profileExamine the specimen carefully and identify the key sugar content, firmness, and potential bruising levels the consumer is looking for.\r\nStep 3: Create your observation logUsing Microsoft Word, create/update your Fruit Spec Sheet to match the specimen you selected. Refer to the Ripeness section in this SLATE course and the peeling lecture for guidance.\r\n\r\nPart 2: Optimize Your Preparation with AI\r\n\r\nStep 1: Log in to BerryFirstGo to berryfirst.com/organizations/sheridan-college and log in using your Sheridan College email and password.\r\nStep 2: Learn how to use BerryFirstWatch. This tutorial is to understand how the ripeness detection system works:→ BerryFirst Video TutorialOR read the step-by-step guide:→ BerryFirst Peeling User Guide (PDF)\r\nStep 3: Upload your fruit photo. Upload a high-resolution photo of your fruit to BerryFirst and read the feedback it gives you regarding peel thickness.\r\nStep 4: Improve your preparation plan. Make changes to your slicing technique based on the AI feedback.\r\nStep 5: Get your score. Click the blue \"Enhance with AI\" button (on the right side)Then click \"Canadian Produce Readiness Check\"Then click \"Run AI Analysis\"The system will give you a ripeness score.\r\nIf your score is \"Ripe\" or higher:Great job! Take screenshots of the entire AI Ripeness Report (make sure your name and the fruit are visible). You will submit these screenshots with your assignment.\r\nIf your score is \"Underripe/Overripe\":Make more changes to your storage temperature based on the feedback. Upload a new photo to BerryFirst again. Keep doing this until you get \"Ripe\" or higher. Then take the screenshots to submit.\r\n\r\nPart 3: What to Submit\r\n\r\nYou need to submit 3 documents:\r\nItem 1: Fruit Spec SheetSave as a Word document (.doc or .docx)\r\nItem 2: Your Final Slicing PlanSave as a PDF. File name must be: FirstName-LastName-Fruit Final(Example: John-Smith-Fruit Final.pdf)\r\nItem 3: BerryFirst Screenshots. Screenshots of your AI Ripeness Report. Important: Your name and the specimen must be visible in the screenshots\r\n\r\n\r\nRemember: You need at least 70% to pass this assignment. Put the required effort into selecting a thoughtful, unbruised specimen that showcases your observation skills and demonstrates why you're the perfect fit for the kitchen!\r\n",
+            "Html": "<div style=\"background-color: #003767;color: white;padding: 20px;border-radius: 8px;margin-bottom: 20px;\">\r\n<h2 style=\"margin: 0;font-size: 24px;\">Fruit Observation Assignment Instructions</h2>\r\n</div>\r\n<h3 style=\"color: #003767;font-size: 20px;margin-bottom: 15px;border-bottom: 2px solid #00B2CE;padding-bottom: 5px;\">Part 1: Select and Analyze Your Specimen</h3>\r\n<div style=\"border: 1px solid #ddd;border-radius: 8px;padding: 20px;margin-bottom: 20px;\">\r\n<div style=\"margin-bottom: 15px;padding: 15px;background-color: #f9f9f9;border-left: 4px solid #00B2CE;border-radius: 4px;\"><strong style=\"font-size: 18px;\">Step 1: Choose a fruit specimen</strong><br/>Select a high-stakes fruit (e.g., a Mango, Durian, or Dragonfruit) that is appropriate for your specialization.</div>\r\n<div style=\"margin-bottom: 15px;padding: 15px;background-color: #f9f9f9;border-left: 4px solid #00B2CE;border-radius: 4px;\"><strong style=\"font-size: 18px;\">Step 2: Analyze the ripeness profile</strong><br/>Examine the specimen carefully and identify the key sugar content, firmness, and potential bruising levels the consumer is looking for.</div>\r\n<div style=\"margin-bottom: 15px;padding: 15px;background-color: #f9f9f9;border-left: 4px solid #00B2CE;border-radius: 4px;\"><strong style=\"font-size: 18px;\">Step 3: Create your observation log</strong><br/>Using Microsoft Word, create/update your Fruit Spec Sheet to match the specimen you selected. Refer to the Ripeness section in this SLATE course and the peeling lecture for guidance.</div>\r\n</div>\r\n<h3 style=\"color: #003767;font-size: 20px;margin-bottom: 15px;border-bottom: 2px solid #00B2CE;padding-bottom: 5px;\">Part 2: Optimize Your Preparation with AI</h3>\r\n<div style=\"border: 1px solid #ddd;border-radius: 8px;padding: 20px;margin-bottom: 20px;\">\r\n<div style=\"margin-bottom: 15px;padding: 15px;background-color: #f9f9f9;border-left: 4px solid #00B2CE;border-radius: 4px;\"><strong style=\"font-size: 18px;\">Step 1: Log in to BerryFirst</strong><br/>Go to <a rel=\"noopener\" href=\"#\" target=\"_blank\" style=\"color: #cf3774;font-weight: bold;\">berryfirst.com/organizations/sheridan-college</a> and log in using your Sheridan College email and password.</div>\r\n<div style=\"margin-bottom: 15px;padding: 15px;background-color: #f9f9f9;border-left: 4px solid #00B2CE;border-radius: 4px;\"><strong style=\"font-size: 18px;\">Step 2: Learn how to use BerryFirst</strong><br/>Watch this tutorial to understand how the ripeness detection system works:<br/><a rel=\"noopener\" href=\"#\" target=\"_blank\" style=\"color: #cf3774;font-weight: bold;\">→ BerryFirst Video Tutorial</a><br/>OR read the step-by-step guide:<br/><a rel=\"noopener\" href=\"#\" target=\"_blank\" style=\"color: #cf3774;font-weight: bold;\">→ BerryFirst Peeling User Guide (PDF)</a></div>\r\n<div style=\"margin-bottom: 15px;padding: 15px;background-color: #f9f9f9;border-left: 4px solid #00B2CE;border-radius: 4px;\"><strong style=\"font-size: 18px;\">Step 3: Upload your fruit photo</strong><br/>Upload a high-resolution photo of your fruit to BerryFirst and read the feedback it gives you regarding peel thickness.</div>\r\n<div style=\"margin-bottom: 15px;padding: 15px;background-color: #f9f9f9;border-left: 4px solid #00B2CE;border-radius: 4px;\"><strong style=\"font-size: 18px;\">Step 4: Improve your preparation plan</strong><br/>Make changes to your slicing technique based on the AI feedback.</div>\r\n<div style=\"margin-bottom: 15px;padding: 15px;background-color: #f9f9f9;border-left: 4px solid #00B2CE;border-radius: 4px;\"><strong style=\"font-size: 18px;\">Step 5: Get your score</strong><br/>Click the blue <strong>&quot;Enhance with AI&quot;</strong> button (on the right side)<br/>Then click <strong>&quot;Canadian Produce Readiness Check&quot;</strong><br/>Then click <strong>&quot;Run AI Analysis&quot;</strong><br/><br/>The system will give you a score.</div>\r\n<div style=\"margin-bottom: 15px;padding: 15px;background-color: #e8f5e9;border-left: 4px solid #4caf50;border-radius: 4px;\"><strong style=\"font-size: 18px;\">If your score is &quot;Ripe&quot; or higher:</strong><br/>Great job! Take screenshots of the entire AI Ripeness Report (make sure your name and the fruit are visible). You will submit these screenshots with your assignment.</div>\r\n<div style=\"padding: 15px;background-color: #fff3e0;border-left: 4px solid #ff9800;border-radius: 4px;\"><strong style=\"font-size: 18px;\">If your score is &quot;Underripe/Overripe&quot;:</strong><br/>Make more changes to your storage temperature based on the feedback. Upload a new photo to BerryFirst again and run the analysis again. Keep doing this until you get &quot;Ripe&quot; or higher. <em>Then</em> take the screenshots to submit.</div>\r\n</div>\r\n<h3 style=\"color: #003767;font-size: 20px;margin-bottom: 15px;border-bottom: 2px solid #00B2CE;padding-bottom: 5px;\">Part 3: What to Submit</h3>\r\n<div style=\"background-color: #f5f5f5;padding: 20px;border: 2px solid #CF3774;border-radius: 8px;margin-bottom: 20px;\">\r\n<p style=\"margin: 0 0 15px 0;font-size: 18px;\"><strong>You need to submit 3 documents:</strong></p>\r\n<div style=\"margin-bottom: 15px;padding: 15px;background-color: white;border-left: 4px solid #CF3774;border-radius: 4px;\"><strong style=\"font-size: 18px;color: #cf3774;\">Item 1: Fruit Spec Sheet</strong><br/>Save as a Word document (.doc or .docx)</div>\r\n<div style=\"margin-bottom: 15px;padding: 15px;background-color: white;border-left: 4px solid #CF3774;border-radius: 4px;\"><strong style=\"font-size: 18px;color: #cf3774;\">Item 2: Your Final Slicing Plan</strong><br/>Save as a PDF<br/><strong>File name must be:</strong> FirstName-LastName-Fruit Final<br/><em>(Example: John-Smith-Fruit Final.pdf)</em></div>\r\n<div style=\"padding: 15px;background-color: white;border-left: 4px solid #CF3774;border-radius: 4px;\"><strong style=\"font-size: 18px;color: #cf3774;\">Item 3: BerryFirst Screenshots</strong><br/>Screenshots of your AI Ripeness Report<br/><strong>Important:</strong> Your name and the specimen must be visible in the screenshots</div>\r\n</div>\r\n<div style=\"background-color: #f5f5f5;padding: 15px;border-left: 4px solid #00B2CE;margin-bottom: 20px;\">\r\n<p style=\"margin: 0;\"><strong>Remember:</strong> You need at least 70% to pass this assignment. Put the required effort into selecting a thoughtful, unbruised specimen that showcases your observation skills and demonstrates why you&#39;re the perfect fit for the kitchen!</p>\r\n</div>"
+        },
+        "Attachments": [],
+        "TotalFiles": 0,
+        "UnreadFiles": 0,
+        "FlaggedFiles": 0,
+        "TotalUsers": 0,
+        "TotalUsersWithSubmissions": 0,
+        "TotalUsersWithFeedback": 0,
+        "Availability": null,
+        "IsHidden": false,
+        "Assessment": {
+            "ScoreDenominator": 100.000000000,
+            "Rubrics": [
+                {
+                    "RubricId": 112233,
+                    "Name": "Fruit Observation Rubric",
+                    "Description": {
+                        "Text": "Criteria for evaluating the scientific and sensory observation of fruit specimens.",
+                        "Html": "<p>Criteria for evaluating the scientific and sensory observation of fruit specimens.</p>"
+                    },
+                    "RubricType": 1,
+                    "RubricStateId": 0,
+                    "ScoringMethod": 3,
+                    "IsScoreVisibleToAssessedUsers": true,
+                    "CriteriaGroups": [
+                        {
+                            "Name": "Observation & Documentation",
+                            "Levels": [
+                                {
+                                    "Id": 9000001,
+                                    "Name": "Exemplary",
+                                    "Points": null
+                                },
+                                {
+                                    "Id": 9000002,
+                                    "Name": "Proficient",
+                                    "Points": null
+                                },
+                                {
+                                    "Id": 9000003,
+                                    "Name": "Developing",
+                                    "Points": null
+                                }
+                            ],
+                            "Criteria": [
+                                {
+                                    "Id": 5000001,
+                                    "Name": "EXTERNAL PHYSICAL DESCRIPTION",
+                                    "Cells": [
+                                        {
+                                            "Feedback": {
+                                                "Text": "Incredible attention to detail! Your description of the skin texture and color gradients is highly precise.",
+                                                "Html": "<p>Incredible attention to detail! Your description of the skin texture and color gradients is highly precise.</p>"
+                                            },
+                                            "Description": {
+                                                "Text": "\r\nDetailed notes on skin texture (e.g., lenticels, waxy coating)\r\nPrecise color identification using specific terminology\r\nAccurate measurements of dimensions and mass\r\n",
+                                                "Html": "<ul>\r\n<li>Detailed notes on skin texture (e.g., lenticels, waxy coating)</li>\r\n<li>Precise color identification using specific terminology</li>\r\n<li>Accurate measurements of dimensions and mass</li>\r\n</ul>"
+                                            },
+                                            "Points": 3.000000000,
+                                            "LevelId": 9000001
+                                        },
+                                        {
+                                            "Feedback": {
+                                                "Text": "Good general description, but try to use more specific adjectives for the texture and surface patterns.",
+                                                "Html": "<p>Good general description, but try to use more specific adjectives for the texture and surface patterns.</p>"
+                                            },
+                                            "Description": {
+                                                "Text": "\r\nGeneral description of appearance and size\r\nBasic color identification\r\nMost physical features identified but lack specific depth\r\n",
+                                                "Html": "<ul>\r\n<li>General description of appearance and size</li>\r\n<li>Basic color identification</li>\r\n<li>Most physical features identified but lack specific depth</li>\r\n</ul>"
+                                            },
+                                            "Points": 2.000000000,
+                                            "LevelId": 9000002
+                                        },
+                                        {
+                                            "Feedback": {
+                                                "Text": "Observation is too brief. Ensure you are looking at the 'micro' details of the fruit surface, not just the overall color.",
+                                                "Html": "<p>Observation is too brief. Ensure you are looking at the 'micro' details of the fruit surface, not just the overall color.</p>"
+                                            },
+                                            "Description": {
+                                                "Text": "\r\nVague or overly brief description\r\nMissing key physical measurements\r\nLacks objective observational language\r\n",
+                                                "Html": "<ul>\r\n<li>Vague or overly brief description</li>\r\n<li>Missing key physical measurements</li>\r\n<li>Lacks objective observational language</li>\r\n</ul>"
+                                            },
+                                            "Points": 1.000000000,
+                                            "LevelId": 9000003
+                                        }
+                                    ]
+                                },
+                                {
+                                    "Id": 5000002,
+                                    "Name": "INTERNAL STRUCTURE & ANALYSIS",
+                                    "Cells": [
+                                        {
+                                            "Feedback": {
+                                                "Text": "Excellent cross-section analysis. You correctly identified the carpels and seed arrangement.",
+                                                "Html": "<p>Excellent cross-section analysis. You correctly identified the carpels and seed arrangement.</p>"
+                                            },
+                                            "Description": {
+                                                "Text": "\r\nClear documentation of internal anatomy (flesh, seeds, core)\r\nAccurate identification of fruit type (e.g., pome, drupe, berry)\r\nObservation of oxidation or moisture levels upon cutting\r\n",
+                                                "Html": "<ul>\r\n<li>Clear documentation of internal anatomy (flesh, seeds, core)</li>\r\n<li>Accurate identification of fruit type (e.g., pome, drupe, berry)</li>\r\n<li>Observation of oxidation or moisture levels upon cutting</li>\r\n</ul>"
+                                            },
+                                            "Points": 3.000000000,
+                                            "LevelId": 9000001
+                                        },
+                                        {
+                                            "Feedback": {
+                                                "Text": "Good internal notes. To improve, try to categorize the fruit type based on the botanical structures you see.",
+                                                "Html": "<p>Good internal notes. To improve, try to categorize the fruit type based on the botanical structures you see.</p>"
+                                            },
+                                            "Description": {
+                                                "Text": "\r\nBasic internal features noted\r\nIdentification of seeds and flesh color\r\nLimited analysis of botanical structure\r\n",
+                                                "Html": "<ul>\r\n<li>Basic internal features noted</li>\r\n<li>Identification of seeds and flesh color</li>\r\n<li>Limited analysis of botanical structure</li>\r\n</ul>"
+                                            },
+                                            "Points": 2.000000000,
+                                            "LevelId": 9000002
+                                        },
+                                        {
+                                            "Feedback": {
+                                                "Text": "Internal observations are missing or lack sufficient detail to distinguish the fruit's structure.",
+                                                "Html": "<p>Internal observations are missing or lack sufficient detail to distinguish the fruit's structure.</p>"
+                                            },
+                                            "Description": {
+                                                "Text": "\r\nMinimal documentation of the interior\r\nInaccurate identification of internal parts\r\nNo mention of botanical classification\r\n",
+                                                "Html": "<ul>\r\n<li>Minimal documentation of the interior</li>\r\n<li>Inaccurate identification of internal parts</li>\r\n<li>No mention of botanical classification</li>\r\n</ul>"
+                                            },
+                                            "Points": 1.000000000,
+                                            "LevelId": 9000003
+                                        }
+                                    ]
+                                }
+                            ],
+                            "LevelSetId": 1710363
+                        }
+                    ],
+                    "OverallLevels": [
+                        {
+                            "Id": 444326,
+                            "Name": "Passed",
+                            "RangeStart": 10.500000000,
+                            "Description": {
+                                "Text": "You've passed the fruit observation assignment and do not need to resubmit :) ",
+                                "Html": "<p>You&#39;ve passed the resume assignment and do not need to resubmit :)&#160;</p>"
+                            },
+                            "Feedback": {
+                                "Text": "",
+                                "Html": ""
+                            }
+                        },
+                        {
+                            "Id": 444327,
+                            "Name": "Resubmit",
+                            "RangeStart": 0.000000000,
+                            "Description": {
+                                "Text": "You have not passed the fruit observation assignment assignment and will need to resubmit to receive a passing grade and successfully complete this course. Please carefully review the comments, make the necessary changes, and resubmit your updated fruit observation assignment within the next 7 days. ",
+                                "Html": "<p>You have not passed the fruit observation assignment assignment and will need to resubmit to receive a passing grade and successfully complete this course. Please carefully review the comments, make the necessary changes, and resubmit your updated fruit observation assignment within the next 7 days.&#160;</p>"
+                            },
+                            "Feedback": {
+                                "Text": "",
+                                "Html": ""
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        "DropboxType": 2,
+        "GroupTypeId": null,
+        "DueDate": "2026-01-19T04:59:59.000Z",
+        "DisplayInCalendar": false,
+        "NotificationEmail": null,
+        "LinkAttachments": [],
+        "ActivityId": null,
+        "IsAnonymous": false,
+        "SubmissionType": 0,
+        "CompletionType": 0,
+        "GradeItemId": 2824096
+    },
+    {
+        "Id": 1053183,
+        "CategoryId": 1057275,
+        "Name": "Comparative Fruit Taxonomy Report",
+        "CustomInstructions": {
+            "Text": "Important note: If you have already completed the advanced histology module, please ensure your report includes cellular-level differentiation.\r\n\r\nTask: Produce a Comparative Fruit Taxonomy Report analyzing two distinct botanical categories (e.g., Pome vs. Hesperidium). Submit your final technical analysis in PDF format to the assignment dropbox. Please see an example of the required report structure by clicking here.\r\nInstructions:\r\n\r\nSelect two fruit specimens from different botanical families for comparison.\r\nConduct a detailed cross-section analysis and research their unique evolutionary adaptations.\r\nSynthesize your data into a technical report, including original visualizations of nutrient density.\r\n\r\nNeed Help? For more information on botanical classification standards, visit here. If you need assistance with technical writing, contact the Sheridan Tutoring Center here.",
+            "Html": "<p><strong>Important note:</strong> If you have already completed the advanced histology module, please ensure your report includes cellular-level differentiation.</p>\r\n<p></p>\r\n<p>Task: Produce a Comparative Fruit Taxonomy Report analyzing two distinct botanical categories (e.g., Pome vs. Hesperidium). Submit your final technical analysis in PDF format to the assignment dropbox. Please see an example of the required report structure by clicking&#160;<a rel=\"noopener\" href=\"#\" target=\"_blank\">here</a>.</p>\r\n<p>Instructions:</p>\r\n<ol>\r\n<li>Select two fruit specimens from different botanical families for comparison.</li>\r\n<li>Conduct a detailed cross-section analysis and research their unique evolutionary adaptations.</li>\r\n<li>Synthesize your data into a technical report, including original visualizations of nutrient density.</li>\r\n</ol>\r\n<p><strong>Need Help?</strong><br/>For more information on botanical classification standards, visit <a rel=\"noopener\" target=\"_blank\" href=\"#\">here</a>. If you need assistance with technical writing, contact the Sheridan Tutoring Center <a rel=\"noopener\" target=\"_blank\" href=\"#\">here</a>.</p>"
+        },
+        "Attachments": [
+            {
+                "FileId": 12345678,
+                "FileName": "Comparative Fruit Taxonomy.pdf",
+                "Size": 100000
+            }
+        ],
+        "TotalFiles": 0,
+        "UnreadFiles": 0,
+        "FlaggedFiles": 0,
+        "TotalUsers": 0,
+        "TotalUsersWithSubmissions": 0,
+        "TotalUsersWithFeedback": 0,
+        "Availability": null,
+        "IsHidden": false,
+        "Assessment": {
+            "ScoreDenominator": null,
+            "Rubrics": []
+        },
+        "DropboxType": 2,
+        "GroupTypeId": null,
+        "DueDate": "2026-01-12T04:59:59.000Z",
+        "DisplayInCalendar": false,
+        "NotificationEmail": null,
+        "LinkAttachments": [],
+        "ActivityId": null,
+        "IsAnonymous": false,
+        "SubmissionType": 0,
+        "CompletionType": 0,
+        "GradeItemId": null
+    }
+]

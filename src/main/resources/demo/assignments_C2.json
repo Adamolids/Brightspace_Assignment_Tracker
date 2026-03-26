@@ -1,0 +1,119 @@
+[
+    { 
+        "Id": 876543,
+        "CategoryId": 887766,
+        "Name": "These demo assignments should all be about: Weight Lifting 101",
+        "CustomInstructions": {
+            "Text": "",
+            "Html": ""
+        },
+        "Attachments": [],
+        "TotalFiles": 0,
+        "UnreadFiles": 0,
+        "FlaggedFiles": 0,
+        "TotalUsers": 0,
+        "TotalUsersWithSubmissions": 0,
+        "TotalUsersWithFeedback": 0,
+        "Availability": null,
+        "IsHidden": false,
+        "Assessment": {
+            "ScoreDenominator": null,
+            "Rubrics": []
+        },
+        "DropboxType": 2,
+        "GroupTypeId": null,
+        "DueDate": null,
+        "DisplayInCalendar": false,
+        "NotificationEmail": null,
+        "LinkAttachments": [
+            {
+                "LinkId": 12345,
+                "LinkName": "addSomeDemoTextHere",
+                "Href": "addSomeDemoTextHere"
+            }
+        ],
+        "ActivityId": null,
+        "IsAnonymous": false,
+        "SubmissionType": 0,
+        "CompletionType": 0,
+        "GradeItemId": null
+    },
+    {
+        "Id": 777333,
+        "CategoryId": 666222,
+        "Name": "addSomeDemoTextHere",
+        "CustomInstructions": {
+            "Text": "addSomeDemoTextHere",
+            "Html": "addSomeDemoTextHere"
+        },
+        "Attachments": [],
+        "TotalFiles": 0,
+        "UnreadFiles": 0,
+        "FlaggedFiles": 0,
+        "TotalUsers": 0,
+        "TotalUsersWithSubmissions": 0,
+        "TotalUsersWithFeedback": 0,
+        "Availability": null,
+        "IsHidden": false,
+        "Assessment": {
+            "ScoreDenominator": null,
+            "Rubrics": []
+        },
+        "DropboxType": 2,
+        "GroupTypeId": null,
+        "DueDate": null,
+        "DisplayInCalendar": false,
+        "NotificationEmail": null,
+        "LinkAttachments": [
+            {
+                "LinkId": 50127,
+                "LinkName": "addSomeDemoTextHere",
+                "Href": "addSomeDemoTextHere"
+            }
+        ],
+        "ActivityId": null,
+        "IsAnonymous": false,
+        "SubmissionType": 0,
+        "CompletionType": 0,
+        "GradeItemId": null
+    },
+    {
+        "Id": 888321,
+        "CategoryId": 984000,
+        "Name": "addSomeDemoTextHere",
+        "CustomInstructions": {
+            "Text": "addSomeDemoTextHere",
+            "Html": "addSomeDemoTextHere"
+        },
+        "Attachments": [],
+        "TotalFiles": 0,
+        "UnreadFiles": 0,
+        "FlaggedFiles": 0,
+        "TotalUsers": 0,
+        "TotalUsersWithSubmissions": 0,
+        "TotalUsersWithFeedback": 0,
+        "Availability": null,
+        "IsHidden": false,
+        "Assessment": {
+            "ScoreDenominator": null,
+            "Rubrics": []
+        },
+        "DropboxType": 2,
+        "GroupTypeId": null,
+        "DueDate": null,
+        "DisplayInCalendar": false,
+        "NotificationEmail": null,
+        "LinkAttachments": [
+            {
+                "LinkId": 100711,
+                "LinkName": "addSomeDemoTextHere",
+                "Href": "addSomeDemoTextHere"
+            }
+        ],
+        "ActivityId": null,
+        "IsAnonymous": false,
+        "SubmissionType": 0,
+        "CompletionType": 0,
+        "GradeItemId": null
+    }
+]

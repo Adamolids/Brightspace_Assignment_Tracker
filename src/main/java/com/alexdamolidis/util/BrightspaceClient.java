@@ -78,10 +78,10 @@ public class BrightspaceClient {
     }
 
     /**
-     * Sends a GET request to downlaod binary content(attachments). Accepts any content type.
+     * Sends a GET request to download binary content(attachments). Accepts any content type.
      * 
-     * @param url The destination URL for the downlaod.
-     * @return array of bytes comprised of body contents from response.
+     * @param url The destination URL for the download
+     * @return array of bytes comprised of body contents from response
      * @throws AttachmentProcessingException if a network error occurs, or the response is not a valid JSON
      * @throws RuntimeException if the request thread is interrupted
      */

@@ -25,3 +25,4 @@ cookies.txt
 *.db
 googleAuth.json
 tokens/
+src/main/java/tools/

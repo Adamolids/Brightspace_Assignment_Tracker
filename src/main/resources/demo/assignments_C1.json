@@ -1,0 +1,101 @@
+[
+    {
+        "Id": 817726,
+        "CategoryId": null,
+        "Name": "Module 01 Final Assignment/Knowledge Check (This json will be ignored due to _VC present)",
+        "CustomInstructions": {
+            "Text": "Please upload your submission to this dropbox.",
+            "Html": "<p>Please upload your submission to this dropbox.</p>"
+        },
+        "Attachments": [],
+        "TotalFiles": 0,
+        "UnreadFiles": 0,
+        "FlaggedFiles": 0,
+        "TotalUsers": 0,
+        "TotalUsersWithSubmissions": 0,
+        "TotalUsersWithFeedback": 0,
+        "Availability": null,
+        "IsHidden": false,
+        "Assessment": {
+            "ScoreDenominator": 20.000000000,
+            "Rubrics": []
+        },
+        "DropboxType": 2,
+        "GroupTypeId": null,
+        "DueDate": null,
+        "DisplayInCalendar": false,
+        "NotificationEmail": null,
+        "LinkAttachments": [],
+        "ActivityId": null,
+        "IsAnonymous": false,
+        "SubmissionType": 0,
+        "CompletionType": 0,
+        "GradeItemId": null
+    },
+    {
+        "Id": 817727,
+        "CategoryId": null,
+        "Name": "Module 02 Final Assessment/Knowledge Check",
+        "CustomInstructions": {
+            "Text": "Please upload your submission to this dropbox.",
+            "Html": "<p>Please upload your submission to this dropbox.</p>"
+        },
+        "Attachments": [],
+        "TotalFiles": 0,
+        "UnreadFiles": 0,
+        "FlaggedFiles": 0,
+        "TotalUsers": 0,
+        "TotalUsersWithSubmissions": 0,
+        "TotalUsersWithFeedback": 0,
+        "Availability": null,
+        "IsHidden": false,
+        "Assessment": {
+            "ScoreDenominator": 15.000000000,
+            "Rubrics": []
+        },
+        "DropboxType": 2,
+        "GroupTypeId": null,
+        "DueDate": null,
+        "DisplayInCalendar": false,
+        "NotificationEmail": null,
+        "LinkAttachments": [],
+        "ActivityId": null,
+        "IsAnonymous": false,
+        "SubmissionType": 0,
+        "CompletionType": 0,
+        "GradeItemId": null
+    },
+    {
+        "Id": 817728,
+        "CategoryId": null,
+        "Name": "Module 03 Final Assignment/Knowledge Check",
+        "CustomInstructions": {
+            "Text": "Please upload your submission to this dropbox.",
+            "Html": "<p>Please upload your submission to this dropbox.</p>"
+        },
+        "Attachments": [],
+        "TotalFiles": 0,
+        "UnreadFiles": 0,
+        "FlaggedFiles": 0,
+        "TotalUsers": 0,
+        "TotalUsersWithSubmissions": 0,
+        "TotalUsersWithFeedback": 0,
+        "Availability": null,
+        "IsHidden": false,
+        "Assessment": {
+            "ScoreDenominator": 15.000000000,
+            "Rubrics": []
+        },
+        "DropboxType": 2,
+        "GroupTypeId": null,
+        "DueDate": null,
+        "DisplayInCalendar": false,
+        "NotificationEmail": null,
+        "LinkAttachments": [],
+        "ActivityId": null,
+        "IsAnonymous": false,
+        "SubmissionType": 0,
+        "CompletionType": 0,
+        "GradeItemId": null
+    }
+]

@@ -1,0 +1,31 @@
+{
+  "candidates": [
+    {
+      "content": {
+        "parts": [
+          {
+            "text": "{\n  \"priority\": 0,\n  \"reasoning\": \"The assignment is 10 days overdue, which triggers an immediate priority of 0. The complexity score is 3 due to the technical requirements of video recording, specialized biomechanical annotation software, and physical implementation of a compound lift.\",\n  \"llmSummary\": \"If you are recovering from a recent musculoskeletal injury, please consult with the head trainer before attempting the maximum effort set. This assignment can no longer be submitted. Students were required to submit a biomechanical analysis of a primary compound lift using video recording with annotated overlays of bar path and joint angles. The task involved recording a set at 70% of 1RM from a lateral profile and providing a summary report on technical markers and improvement cues.\"\n}",
+            "thoughtSignature": "DemoSignature"
+          }
+        ],
+        "role": "model"
+      },
+      "finishReason": "STOP",
+      "index": 0
+    }
+  ],
+  "usageMetadata": {
+    "promptTokenCount": 552,
+    "candidatesTokenCount": 162,
+    "totalTokenCount": 1355,
+    "promptTokensDetails": [
+      {
+        "modality": "TEXT",
+        "tokenCount": 552
+      }
+    ],
+    "thoughtsTokenCount": 641
+  },
+  "modelVersion": "gemini-3-flash-preview",
+  "responseId": "DemoResponseId"
+}

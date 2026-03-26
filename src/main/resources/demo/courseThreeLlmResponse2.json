@@ -1,0 +1,31 @@
+{
+  "candidates": [
+    {
+      "content": {
+        "parts": [
+          {
+            "text": "{\n  \"priority\": 2,\n  \"reasoning\": \"The assignment is due in 11 days (\u003c= 14 days) and has a complexity score of 2 (Medium) because it requires multi-step documentation, the use of external software (BerryFirst AI), and the creation of a technical report.\",\n  \"llmSummary\": \"Select a specialized fruit specimen to analyze its sugar content and firmness for a Fruit Spec Sheet. Use the BerryFirst AI platform to upload photos and refine a slicing plan based on feedback until a 'Ripe' score is achieved. Finally, submit the completed spec sheet, a formatted slicing plan as a PDF, and screenshots of the AI ripeness report.\"\n}",
+            "thoughtSignature": "DemoSignature"
+          }
+        ],
+        "role": "model"
+      },
+      "finishReason": "STOP",
+      "index": 0
+    }
+  ],
+  "usageMetadata": {
+    "promptTokenCount": 945,
+    "candidatesTokenCount": 148,
+    "totalTokenCount": 1773,
+    "promptTokensDetails": [
+      {
+        "modality": "TEXT",
+        "tokenCount": 945
+      }
+    ],
+    "thoughtsTokenCount": 680
+  },
+  "modelVersion": "gemini-3-flash-preview",
+  "responseId": "DemoResponseId"
+}

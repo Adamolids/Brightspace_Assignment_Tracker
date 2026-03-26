@@ -243,4 +243,8 @@ public class LlmService {
         assign.setPriority(0);
         assign.setReasoning(null);
     }
+
+    public HttpResponse<String> getRawApiResponse(String prompt) throws IOException, InterruptedException {
+        return postToGeminiApi(prompt);
+    }
 }

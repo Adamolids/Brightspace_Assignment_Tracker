@@ -12,8 +12,6 @@ import com.alexdamolidis.service.AssignmentService;
 import com.alexdamolidis.util.BrightspaceClient;
 import com.alexdamolidis.util.Config;
 
-// import tools.BrightspaceDevUtils;
-
 public class AssignmentTrackerApplication {
 	private static final Logger logger = LoggerFactory.getLogger(AssignmentTrackerApplication.class);
 
@@ -39,7 +37,6 @@ public class AssignmentTrackerApplication {
 
 		calendar.syncAssignments(semester.getCourses());
 		logger.info("Synced assignments to Google Calendar.");
-
 	}
 
 	public static void main(String[] args) {

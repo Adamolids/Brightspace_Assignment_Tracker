@@ -1,0 +1,31 @@
+{
+  "candidates": [
+    {
+      "content": {
+        "parts": [
+          {
+            "text": "{\n  \"priority\": 4,\n  \"reasoning\": \"The assignment is due today (0 days remaining), which dictates the highest priority level regardless of complexity. The task involves technical calculations and structured spreadsheet development, placing it in the medium complexity category.\",\n  \"llmSummary\": \"This assignment requires you to have calculated your 1-Rep Max (1RM) values within the last 14 days. You must develop a structured 4-week Linear Periodization Macro-Cycle spreadsheet focusing on a specific training goal such as Strength, Hypertrophy, or Power. The program must utilize percentage-based progression models for core lift weight increases and include a scheduled deload week to manage fatigue and recovery.\"\n}",
+            "thoughtSignature": "DemoSignature"
+          }
+        ],
+        "role": "model"
+      },
+      "finishReason": "STOP",
+      "index": 0
+    }
+  ],
+  "usageMetadata": {
+    "promptTokenCount": 546,
+    "candidatesTokenCount": 150,
+    "totalTokenCount": 1299,
+    "promptTokensDetails": [
+      {
+        "modality": "TEXT",
+        "tokenCount": 546
+      }
+    ],
+    "thoughtsTokenCount": 603
+  },
+  "modelVersion": "gemini-3-flash-preview",
+  "responseId": "DemoResponseId"
+}

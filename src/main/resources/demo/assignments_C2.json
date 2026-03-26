@@ -2,10 +2,11 @@
     { 
         "Id": 876543,
         "CategoryId": 887766,
-        "Name": "These demo assignments should all be about: Weight Lifting 101",
+        "Name": "Biomechanical Form Analysis",
         "CustomInstructions": {
-            "Text": "",
-            "Html": ""
+            "Text": "Important note: If you are recovering from a recent musculoskeletal injury, please consult with the head trainer before attempting the maximum effort set.\r\n\r\nTask: Submit a Biomechanical Form Analysis of a primary compound lift (Squat, Bench, or Deadlift). You must provide a video recording with annotated overlays showing bar path and joint angles. Please see an example of an annotated lift by clicking here.\r\nInstructions:\r\n\r\nRecord a high-quality video of a single set at 70% of your 1RM from a lateral profile.\r\nIdentify key technical markers including hip crease depth, spinal neutrality, and bar path verticality.\r\nSubmit a summary report detailing two specific technical cues to improve your efficiency.\r\n\r\nNeed Help? For more information on biomechanical standards, visit here. If you need assistance with the annotation software, contact the Sheridan Athletic Lab here.",
+            "Html": "<p><strong>Important note:</strong> If you are recovering from a recent musculoskeletal injury, please consult with the head trainer before attempting the maximum effort set.</p>\r\n<p></p>\r\n<p>Task: Submit a Biomechanical Form Analysis of a primary compound lift (Squat, Bench, or Deadlift). You must provide a video recording with annotated overlays showing bar path and joint angles. Please see an example of an annotated lift by clicking&#160;<a rel=\"noopener\" href=\"#\" target=\"_blank\">here</a>.</p>\r\n<p>Instructions:</p>\r\n<ol>\r\n<li>Record a high-quality video of a single set at 70% of your 1RM from a lateral profile.</li>\r\n<li>Identify key technical markers including hip crease depth, spinal neutrality, and bar path verticality.</li>\r\n<li>Submit a summary report detailing two specific technical cues to improve your efficiency.</li>\r\n</ol>\r\n<p><strong>Need Help?</strong><br/>For more information on biomechanical standards, visit <a rel=\"noopener\" target=\"_blank\" href=\"#\">here</a>. If you need assistance with the annotation software, contact the Sheridan Athletic Lab <a rel=\"noopener\" target=\"_blank\" href=\"#\">here</a>.</p>"
+
         },
         "Attachments": [],
         "TotalFiles": 0,
@@ -25,13 +26,7 @@
         "DueDate": null,
         "DisplayInCalendar": false,
         "NotificationEmail": null,
-        "LinkAttachments": [
-            {
-                "LinkId": 12345,
-                "LinkName": "addSomeDemoTextHere",
-                "Href": "addSomeDemoTextHere"
-            }
-        ],
+        "LinkAttachments": [],
         "ActivityId": null,
         "IsAnonymous": false,
         "SubmissionType": 0,
@@ -41,10 +36,10 @@
     {
         "Id": 777333,
         "CategoryId": 666222,
-        "Name": "addSomeDemoTextHere",
+        "Name": "Macro Cycle Programming Logic",
         "CustomInstructions": {
-            "Text": "addSomeDemoTextHere",
-            "Html": "addSomeDemoTextHere"
+            "Text": "Important note: This assignment requires you to have calculated your 1-Rep Max (1RM) values within the last 14 days.\r\n\r\nTask: Develop a 4-week Linear Periodization Macro-Cycle focused on progressive overload. Your program must include volume, intensity, and deload calculations in a structured spreadsheet. Please see an example of a completed programming block by clicking here.\r\nInstructions:\r\n\r\nDefine a specific training goal (Strength, Hypertrophy, or Power) and select appropriate intensity ranges.\r\nCalculate weekly weight increases for core lifts using a percentage-based progression model.\r\nIntegrate a scheduled 'Deload' week to manage systemic fatigue and CNS recovery.\r\n\r\nNeed Help? For more information on periodization models, visit here. If you need assistance with spreadsheet formulas, contact the Sheridan Math Center here.",
+            "Html": "<p><strong>Important note:</strong> This assignment requires you to have calculated your 1-Rep Max (1RM) values within the last 14 days.</p>\r\n<p></p>\r\n<p>Task: Develop a 4-week Linear Periodization Macro-Cycle focused on progressive overload. Your program must include volume, intensity, and deload calculations in a structured spreadsheet. Please see an example of a completed programming block by clicking&#160;<a rel=\"noopener\" href=\"#\" target=\"_blank\">here</a>.</p>\r\n<p>Instructions:</p>\r\n<ol>\r\n<li>Define a specific training goal (Strength, Hypertrophy, or Power) and select appropriate intensity ranges.</li>\r\n<li>Calculate weekly weight increases for core lifts using a percentage-based progression model.</li>\r\n<li>Integrate a scheduled &#39;Deload&#39; week to manage systemic fatigue and CNS recovery.</li>\r\n</ol>\r\n<p><strong>Need Help?</strong><br/>For more information on periodization models, visit <a rel=\"noopener\" target=\"_blank\" href=\"#\">here</a>. If you need assistance with spreadsheet formulas, contact the Sheridan Math Center <a rel=\"noopener\" target=\"_blank\" href=\"#\">here</a>.</p>"
         },
         "Attachments": [],
         "TotalFiles": 0,
@@ -64,13 +59,7 @@
         "DueDate": null,
         "DisplayInCalendar": false,
         "NotificationEmail": null,
-        "LinkAttachments": [
-            {
-                "LinkId": 50127,
-                "LinkName": "addSomeDemoTextHere",
-                "Href": "addSomeDemoTextHere"
-            }
-        ],
+        "LinkAttachments": [],
         "ActivityId": null,
         "IsAnonymous": false,
         "SubmissionType": 0,
@@ -80,10 +69,10 @@
     {
         "Id": 888321,
         "CategoryId": 984000,
-        "Name": "addSomeDemoTextHere",
+        "Name": "Hypertrophy vs. Strength Taxonomy Report",
         "CustomInstructions": {
-            "Text": "addSomeDemoTextHere",
-            "Html": "addSomeDemoTextHere"
+            "Text": "Important note: Ensure your analysis cites at least two peer-reviewed journals in the field of Exercise Science or Kinesiology.\r\n\r\nTask: Produce a Technical Taxonomy Report comparing the physiological adaptations of Hypertrophy-focused training vs. Absolute Strength training. Submit your final report in PDF format. Please see an example of the required scientific report format by clicking here.\r\nInstructions:\r\n\r\nCompare the primary mechanisms of muscle growth (Mechanical Tension vs. Metabolic Stress).\r\nAnalyze the neurological adaptations associated with low-rep, high-intensity training protocols.\r\nSynthesize your findings into a comparative summary of recovery requirements for each modality.\r\n\r\nNeed Help? For more information on exercise physiology research, visit here. If you need assistance with academic citations, contact the Sheridan Library here.",
+            "Html": "<p><strong>Important note:</strong> Ensure your analysis cites at least two peer-reviewed journals in the field of Exercise Science or Kinesiology.</p>\r\n<p></p>\r\n<p>Task: Produce a Technical Taxonomy Report comparing the physiological adaptations of Hypertrophy-focused training vs. Absolute Strength training. Submit your final report in PDF format. Please see an example of the required scientific report format by clicking&#160;<a rel=\"noopener\" href=\"#\" target=\"_blank\">here</a>.</p>\r\n<p>Instructions:</p>\r\n<ol>\r\n<li>Compare the primary mechanisms of muscle growth (Mechanical Tension vs. Metabolic Stress).</li>\r\n<li>Analyze the neurological adaptations associated with low-rep, high-intensity training protocols.</li>\r\n<li>Synthesize your findings into a comparative summary of recovery requirements for each modality.</li>\r\n</ol>\r\n<p><strong>Need Help?</strong><br/>For more information on exercise physiology research, visit <a rel=\"noopener\" target=\"_blank\" href=\"#\">here</a>. If you need assistance with academic citations, contact the Sheridan Library <a rel=\"noopener\" target=\"_blank\" href=\"#\">here</a>.</p>"
         },
         "Attachments": [],
         "TotalFiles": 0,
@@ -103,13 +92,7 @@
         "DueDate": null,
         "DisplayInCalendar": false,
         "NotificationEmail": null,
-        "LinkAttachments": [
-            {
-                "LinkId": 100711,
-                "LinkName": "addSomeDemoTextHere",
-                "Href": "addSomeDemoTextHere"
-            }
-        ],
+        "LinkAttachments": [],
         "ActivityId": null,
         "IsAnonymous": false,
         "SubmissionType": 0,

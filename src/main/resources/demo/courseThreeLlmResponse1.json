@@ -1,0 +1,31 @@
+{
+  "candidates": [
+    {
+      "content": {
+        "parts": [
+          {
+            "text": "{\n  \"priority\": 3,\n  \"reasoning\": \"The assignment is due in 5 days, which falls within the \u003c= 7 days threshold for Priority 3. The complexity is rated 1 (Low) because it is a simple survey and document upload task.\",\n  \"llmSummary\": \"Complete the online Student Fruit Survey, which takes approximately 15-30 minutes. After finishing, retrieve the full survey results from your email and upload that file to the dropbox to complete the assignment.\"\n}",
+            "thoughtSignature": "DemoSignature"
+          }
+        ],
+        "role": "model"
+      },
+      "finishReason": "STOP",
+      "index": 0
+    }
+  ],
+  "usageMetadata": {
+    "promptTokenCount": 525,
+    "candidatesTokenCount": 110,
+    "totalTokenCount": 1387,
+    "promptTokensDetails": [
+      {
+        "modality": "TEXT",
+        "tokenCount": 525
+      }
+    ],
+    "thoughtsTokenCount": 752
+  },
+  "modelVersion": "gemini-3-flash-preview",
+  "responseId": "DemoResponseId"
+}

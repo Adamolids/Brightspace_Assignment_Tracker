@@ -1,0 +1,31 @@
+{
+  "candidates": [
+    {
+      "content": {
+        "parts": [
+          {
+            "text": "{\n  \"priority\": 4,\n  \"reasoning\": \"The assignment is due in 2 days, which triggers the highest priority level. The complexity is 2 (Medium) because it is a structured technical report requiring peer-reviewed research and comparative analysis of specific physiological mechanisms.\",\n  \"llmSummary\": \"Produce a Technical Taxonomy Report comparing the physiological and neurological adaptations of Hypertrophy-focused training versus Absolute Strength training. The report must compare muscle growth mechanisms like mechanical tension and metabolic stress, analyze recovery requirements, cite at least two peer-reviewed journals, and be submitted in PDF format following the provided scientific report template.\"\n}",
+            "thoughtSignature": "DemoSignature"
+          }
+        ],
+        "role": "model"
+      },
+      "finishReason": "STOP",
+      "index": 0
+    }
+  ],
+  "usageMetadata": {
+    "promptTokenCount": 536,
+    "candidatesTokenCount": 133,
+    "totalTokenCount": 1286,
+    "promptTokensDetails": [
+      {
+        "modality": "TEXT",
+        "tokenCount": 536
+      }
+    ],
+    "thoughtsTokenCount": 617
+  },
+  "modelVersion": "gemini-3-flash-preview",
+  "responseId": "DemoResponseId"
+}

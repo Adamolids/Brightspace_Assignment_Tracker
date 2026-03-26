@@ -1,0 +1,31 @@
+{
+  "candidates": [
+    {
+      "content": {
+        "parts": [
+          {
+            "text": "{\n  \"priority\": 2,\n  \"reasoning\": \"The assignment is due in 24 days, but the complexity is rated as 2 (Medium) because it requires a technical report, cross-section analysis, and original visualizations, which meets the criteria for priority 2.\",\n  \"llmSummary\": \"Analyze two fruit specimens from different botanical families to produce a Comparative Fruit Taxonomy Report. The technical report must include cross-section analysis, research on evolutionary adaptations, and original visualizations of nutrient density. Students who have previously completed the advanced histology module are required to incorporate cellular-level differentiation into their findings.\"\n}",
+            "thoughtSignature": "DemoSignature"
+          }
+        ],
+        "role": "model"
+      },
+      "finishReason": "STOP",
+      "index": 0
+    }
+  ],
+  "usageMetadata": {
+    "promptTokenCount": 544,
+    "candidatesTokenCount": 131,
+    "totalTokenCount": 1778,
+    "promptTokensDetails": [
+      {
+        "modality": "TEXT",
+        "tokenCount": 544
+      }
+    ],
+    "thoughtsTokenCount": 1103
+  },
+  "modelVersion": "gemini-3-flash-preview",
+  "responseId": "DemoResponseId"
+}

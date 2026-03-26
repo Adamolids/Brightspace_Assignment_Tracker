@@ -10,7 +10,7 @@ import com.alexdamolidis.util.EndpointBuilder;
 
 public class BrightspaceDevUtils {
 
-    BrightspaceClient client;
+    private BrightspaceClient client;
 
     public BrightspaceDevUtils(){
         client = new BrightspaceClient();

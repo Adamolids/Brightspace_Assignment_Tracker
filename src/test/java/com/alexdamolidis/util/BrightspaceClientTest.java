@@ -15,10 +15,11 @@ import org.junit.jupiter.api.Test;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
+import com.alexdamolidis.client.BrightspaceClient;
 import com.alexdamolidis.service.SessionService;
 
 @ExtendWith(MockitoExtension.class)
-class BrightspaceClientTest {
+public class BrightspaceClientTest {
 
     @Mock
     private HttpClient mockHttpClient;

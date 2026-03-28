@@ -24,7 +24,7 @@ As the project evolved, the focus expanded beyond simple data retrieval:
 The recent evolution replaced local JSON storage with a SQLite backed repository, improving data integrity and enabling more robust synchronization.
 
 - Atomic Saves: The sync pipeline now gathers all required data (API metadata and LLM enrichment) before performing a single final upsert, preventing partial writes and reducing the risk of database corruption.
-- Timezone Awareness: Migration from `LocalDateTime` to `OffsetDateTime` ensures assignment deadlines remain accurate regardless of system timezone.
+- Time zone Awareness: Migration from `LocalDateTime` to `OffsetDateTime` ensures assignment deadlines remain accurate regardless of system time zone.
 - Hallucination Safeguards: `daysUntilDue` is now computed in application code instead of by the LLM, preventing hallucinated values.
 
 ### Implementation of Google Calendar Sync
@@ -35,6 +35,12 @@ With assignment data cleaned, enriched, and persisted locally, the next step was
 - Tombstoning: If a calendar event exists in Google Calendar but is no longer present in Brightspace, such as when a professor removes or closes an assignment, the event is marked as "[OLD]" rather than deleted outright, preserving the user's deadline history.
 - Idempotent Updates: Before patching an event, the sync compares the remote state against expected values for summary, description, timestamps, and colorId. Updates only take place when a difference is detected, minimizing unnecessary API calls.
 - Urgency Color Coding: Event color is derived from `daysUntilDue` at sync time rather than priority. Assignments are only sent to the LLM once, minimizing API token consumption. Using `daysUntilDue` ensures the event color is revaluated on each run.
+
+### Interface Implementation for Demo Mode
+
+All three external API dependencies: Brightspace, Gemini, and Google Calendar, were abstracted behind interfaces (`BrightspaceDataSource`, `LlmDataSource`, and `CalendarDataSource`).
+
+These changes paved the way for demo mode. Concrete implementations can be swapped at the application's entry point without touching any business logic. `AssignmentService`, `LlmService`, and `GoogleCalendarService` have no awareness of whether they're handling live API data or local demo data.
 
 ## Mermaid Flow Chart
 ```mermaid
@@ -86,14 +92,18 @@ flowchart TD
 src/main/java/com/alexdamolidis/
 ├── ai/         (LLM integration and AI enrichment services)
 ├── calendar/   (Calendar sync setup and logic)
+├── client/     (Brightspace API communication)
 ├── exception/  (Custom exceptions for different categories of failures)
 ├── model/      (Semester, Course, Assignment, and Attachment POJOs)
 ├── parser/     (HTML sanitization and text normalization utilities)
 ├── repository/ (SQLite persistence and SQL schema management)
 ├── service/    (Synchronization logic and duplicate detection)
-├── util/       (API communication + validation, endpoint configuration, and content extraction helpers)
+└── util/       (API validation, endpoint configuration, and content extraction helpers)
 
-src\test
+src/main/resources/
+└── demo/       (Mock data for Demo Mode)
+
+src/test
 └── test/java/  (JUnit 5 and Mockito test suites)
 
 .cookies.example.txt (Template for Brightspace session cookies)
@@ -101,7 +111,7 @@ src\test
 
 tracker.db      (Main relational database - git-ignored)
 cookies.txt     (Local session storage    - git-ignored)
-.env            (Stores Gemini API key, Google Calendar Id, Semester name - git-ignored)
+.env            (Stores Gemini API key, Google Calendar Id, and Semester name - git-ignored)
 googleAuth.json (Google OAuth credentials - git-ignored)
 ```
 
@@ -114,6 +124,7 @@ Credit Based Filtering: Uses the _VC marker in course codes to differentiate cre
 Integrity Logic: Uses folderId as a unique assignment key and orgUnitId as a unique course key to guarantee assignment uniqueness and maintain consistent state across repeated synchronization runs.
 
 ## Setup and Usage
+
 ### AI Summarization Notice
 The assignment summarization feature sends assignment contents and attachment text to a Large Language Model for summarization, reasoning, and priority scoring.
 
@@ -122,7 +133,7 @@ Users should be aware that Google's free tier API may store and use submitted co
 To avoid this risk, it is strongly recommended to use a paid API tier or locally hosted LLM where submitted data is not retained or used for training.
 
 ### Authentication Setup
-This project integrates three distict services. Please follow the steps below to configure your local environment.
+This project integrates three distinct services. Please follow the steps below to configure your local environment.
 
 ### 1. Brightspace Session Access
 Because students cannot self register for official Brightspace OAuth without admin approval, this project uses session based cookie authentication.
@@ -189,13 +200,17 @@ To sync your assignments, you need to create an application in the Google Cloud 
 First Run Authorization:
 On the very first execution, a browser window will open asking you to authorize the app. Because this is a local developer app, Google will show a "Google hasn’t verified this app" warning. Click Advanced → Go to [Your App Name] (unsafe) to proceed. A tokens/ directory will be created automatically to cache your credentials for future runs.
 
+### Demo Mode 
+If you want to test the application's core logic without setting up any Brightspace cookies, API keys, or Google Cloud Console, you can run demo mode. This mode replaces all external API calls with mock data (located in the `src/main/resources/demo` directory).
+
+Please note on repeated runs: To simulate realistic upcoming/past deadlines, demo mode dynamically calculates assignment due dates based on your current system clock (eg. now + 3 days). Because the system time advances between runs, the engine will always detect a slight change in the due date and trigger a "Detected change in: assignment" update during the sync phase on all subsequent runs.
 
 ### Multi Institution Compatibility
 
 While configured for the D2L "Slate" environment, this tool can be adapted for other Brightspace instances.
 Modify the EndpointBuilder class to update the base URL or API version string to match your institution’s Brightspace domain.
 
-Slate uses "_VC" in the Course Code to indicate whether or not a course is credit bearning. If your school uses a different 
+Slate uses "_VC" in the Course Code to indicate whether or not a course is credit bearing. If your school uses a different 
 indicator, you will have all courses set to: worth credits. This means running non credit bearing assignments through the llm
 for enrichment and having them synced to your calendar. 
 
@@ -205,6 +220,7 @@ To adapt this filter, modify the `unpackOrgUnit` method in the `Course` model to
     mvn compile          # compile the project 
     mvn test             # run the test suite 
     mvn exec:java        # run the application  
+    mvn exec:java@demo   # run the application in demo mode (uses local mock data)
 
 ## Roadmap
 
@@ -220,6 +236,4 @@ To adapt this filter, modify the `unpackOrgUnit` method in the `Course` model to
 
  - [x] Google Calendar API export
 
- - [ ] Demo mode to run the application with pre loaded data
-
- - [ ] Refactor AssignmentService to remove redundancies
+ - [x] Demo mode to run the application with pre loaded data

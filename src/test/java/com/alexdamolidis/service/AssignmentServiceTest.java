@@ -1,7 +1,9 @@
 package com.alexdamolidis.service;
 
-import com.alexdamolidis.util.BrightspaceClient;
+import com.alexdamolidis.client.BrightspaceDataSource;
 import com.alexdamolidis.model.*;
+import com.alexdamolidis.repository.SqliteRepository;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -17,8 +19,10 @@ import static org.mockito.Mockito.*;
 class AssignmentServiceTest {
 
     @Mock
-    private BrightspaceClient scraper;
+    private BrightspaceDataSource scraper;
 
+    @Mock
+    private SqliteRepository mockRepo;
 
     @InjectMocks
     private AssignmentService assignmentService;
@@ -82,7 +86,13 @@ class AssignmentServiceTest {
         String validJson = """
             {
                 "Items": [
-                    { "orgUnitId": "101" }
+                    {
+                        "OrgUnit": {
+                            "Id": 101,
+                            "Code": "Course101",
+                            "Name": "Course Offering"
+                        }
+                    }
                 ]
             }
             """;

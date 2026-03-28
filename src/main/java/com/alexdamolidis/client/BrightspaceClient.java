@@ -1,4 +1,4 @@
-package com.alexdamolidis.util;
+package com.alexdamolidis.client;
 
 import java.io.IOException;
 import java.net.CookieHandler;
@@ -12,8 +12,10 @@ import java.time.Duration;
 import com.alexdamolidis.exception.AttachmentProcessingException;
 import com.alexdamolidis.exception.BrightspaceSyncException;
 import com.alexdamolidis.service.SessionService;
+import com.alexdamolidis.util.HttpValidator;
+import com.alexdamolidis.util.RetryUtility;
 
-public class BrightspaceClient {
+public class BrightspaceClient implements BrightspaceDataSource{
 
     private final CookieManager cookieManager;
     private final HttpClient httpClient;
@@ -51,6 +53,7 @@ public class BrightspaceClient {
      * @throws BrightspaceSyncException if a network error occurs, or the response is not a valid JSON
      * @throws RuntimeException if the request thread is interrupted
      */
+    @Override
     public String sendGetRequest(String url) {
 
         HttpRequest request = HttpRequest.newBuilder().uri(URI.create(url)).header("Accept", "application/json").GET().build();
@@ -85,6 +88,7 @@ public class BrightspaceClient {
      * @throws AttachmentProcessingException if a network error occurs, or the response is not a valid JSON
      * @throws RuntimeException if the request thread is interrupted
      */
+    @Override
     public byte[] downloadAttachment(String url){
 
         HttpRequest request = HttpRequest.newBuilder().uri(URI.create(url)).GET().build();

@@ -29,7 +29,7 @@ import com.google.api.services.calendar.model.Event;
 import com.google.api.services.calendar.model.EventDateTime;
 import com.google.api.services.calendar.model.Events;
 
-public class GoogleCalendarService {
+public class GoogleCalendarService implements CalendarDataSource{
 
     private static final Logger logger = LoggerFactory.getLogger(GoogleCalendarService.class);
     private static final String APP_NAME = "brightspace-tracker";
@@ -75,6 +75,7 @@ public class GoogleCalendarService {
      * @param courses list of courses to sync
      * @throws CalendarSyncException if a Google Calendar API request fails
      */
+    @Override
     public void syncAssignments(List<Course> courses) {
         try {
             Map<String, Event> remoteEvents = fetchTrackedAssignmentEvents();

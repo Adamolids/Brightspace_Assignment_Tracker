@@ -9,6 +9,7 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.alexdamolidis.client.BrightspaceDataSource;
 import com.alexdamolidis.exception.TrackerException;
 import com.alexdamolidis.model.*;
 import com.alexdamolidis.parser.StringParser;
@@ -22,11 +23,11 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 public class AssignmentService {
     private static final Logger logger = LoggerFactory.getLogger(AssignmentService.class);
     private final ObjectMapper mapper;
-    private final BrightspaceClient scraper;
+    private final BrightspaceDataSource scraper;
     private final ContentExtractor extractor;
     private final SqliteRepository repo;
 
-    public AssignmentService(BrightspaceClient scraper, SqliteRepository repo) {
+    public AssignmentService(BrightspaceDataSource scraper, SqliteRepository repo) {
         this.mapper = new ObjectMapper();
         this.repo = repo;
         this.scraper = scraper;
@@ -162,8 +163,7 @@ public class AssignmentService {
         String coursesJson = scraper.sendGetRequest(EndpointBuilder.buildMyEnrollmentsUrl());
         try {
             BrightspaceWrapper<Course> wrapper = mapper.readValue(coursesJson,
-                    new TypeReference<BrightspaceWrapper<Course>>() {
-                    });
+                    new TypeReference<BrightspaceWrapper<Course>>() {});
 
             for (Course newCourseData : wrapper.getItems()) {
                 if (!existingCourseIds.contains(newCourseData.getOrgUnitId())) {

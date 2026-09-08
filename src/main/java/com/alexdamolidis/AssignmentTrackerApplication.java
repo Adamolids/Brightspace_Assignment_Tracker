@@ -4,7 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.alexdamolidis.ai.DemoLlmDataSource;
-import com.alexdamolidis.ai.GeminiLlmDataSource;
+import com.alexdamolidis.ai.ClaudeLlmDataSource;
 import com.alexdamolidis.ai.LlmDataSource;
 import com.alexdamolidis.ai.LlmService;
 import com.alexdamolidis.calendar.CalendarDataSource;
@@ -29,7 +29,7 @@ public class AssignmentTrackerApplication {
 		BrightspaceDataSource sharedClient  = demoMode ? new DemoBrightspaceClient() : new BrightspaceClient();
 		SqliteRepository      repo          = demoMode ? new SqliteRepository("jdbc:sqlite:tracker_demo.db") : new SqliteRepository();
 		AssignmentService     service       = new AssignmentService(sharedClient , repo);
-		LlmDataSource         llmDataSource = demoMode ? new DemoLlmDataSource() : new GeminiLlmDataSource();
+		LlmDataSource         llmDataSource = demoMode ? new DemoLlmDataSource() : new ClaudeLlmDataSource();
 		LlmService            llmService    = new LlmService(llmDataSource);
 		CalendarDataSource    calendar      = demoMode ? new DemoGoogleCalendarService() : new GoogleCalendarService(repo);
 

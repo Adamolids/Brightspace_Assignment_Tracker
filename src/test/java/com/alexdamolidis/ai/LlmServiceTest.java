@@ -2,6 +2,7 @@ package com.alexdamolidis.ai;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
@@ -10,11 +11,14 @@ import com.alexdamolidis.model.Assignment;
 import com.alexdamolidis.model.Attachment;
 
 public class LlmServiceTest {
-    
+
+    // LlmDataSource is a single method interface, so a lambda stands in for a real
+    // provider. These tests never reach the network.
+    private static final LlmDataSource STUB_SOURCE = prompt -> null;
+
     @Test
     public void testBuildPromptWithAttachments(){
-        LlmDataSource dataSource = new GeminiLlmDataSource("RandomApiKey!");
-        LlmService llmService = new LlmService(dataSource);
+        LlmService llmService = new LlmService(STUB_SOURCE);
         Assignment assignment = new Assignment();
         assignment.setName("TestAssignment1Name");
         
@@ -37,8 +41,7 @@ public class LlmServiceTest {
 
     @Test
     public void testBuildPromptNoAttachments(){
-        LlmDataSource dataSource = new GeminiLlmDataSource("RandomApiKey!");
-        LlmService llmService = new LlmService(dataSource);
+        LlmService llmService = new LlmService(STUB_SOURCE);
         Assignment assignment = new Assignment();
         assignment.setName("Check In");
         assignment.setInstructionText("Complete the check in.");
@@ -50,29 +53,14 @@ public class LlmServiceTest {
     }
 
     @Test
-    public void testSyncAiResponseToModelValidJson() {
-        LlmDataSource dataSource = new GeminiLlmDataSource("RandomApiKey!");
-        LlmService llmService = new LlmService(dataSource);
+    public void testApplyEnrichmentPopulatesAssignment() {
+        LlmService llmService = new LlmService(STUB_SOURCE);
         Assignment assignment = new Assignment();
         assignment.setName("Backend Integration Lab");
-        
-        String fakeGoogleResponse = """
-            {
-              "candidates": [
-                {
-                  "content": {
-                    "parts": [
-                      {
-                        "text": "{\\"priority\\": 3, \\"reasoning\\": \\"It is a complex lab.\\", \\"llmSummary\\": \\"Complete the API integration.\\"}"
-                      }
-                    ]
-                  }
-                }
-              ]
-            }
-            """;
 
-        llmService.syncAiResponseToModel(fakeGoogleResponse, assignment);
+        Enrichment enrichment = new Enrichment(3, "It is a complex lab.", "Complete the API integration.");
+
+        llmService.applyEnrichment(enrichment, assignment);
 
         assertEquals(3, assignment.getPriority());
         assertEquals("It is a complex lab.", assignment.getReasoning());
@@ -80,21 +68,29 @@ public class LlmServiceTest {
     }
 
     @Test
-    public void testSyncAiResponseToModelMissingPriorityDefaultsToZero() {
-      LlmDataSource dataSource = new GeminiLlmDataSource("RandomApiKey!");
-      LlmService llmService = new LlmService(dataSource);
-      Assignment assignment = new Assignment();
-        
-        String fakeResponse = """
-            {
-              "candidates": [ { "content": { "parts": [ {
-                "text": "{\\"reasoning\\": \\"Test reasoning.\\", \\"llmSummary\\": \\"Test summary.\\"}"
-              } ] } } ]
-            }
-            """;
+    public void testApplyEnrichmentMissingReasoningFallsBack() {
+        LlmService llmService = new LlmService(STUB_SOURCE);
+        Assignment assignment = new Assignment();
 
-        llmService.syncAiResponseToModel(fakeResponse, assignment);
+        Enrichment enrichment = new Enrichment(2, null, "Test summary.");
 
-        assertEquals(0, assignment.getPriority()); 
-    }   
+        llmService.applyEnrichment(enrichment, assignment);
+
+        assertEquals(2, assignment.getPriority());
+        assertEquals("No reasoning provided.", assignment.getReasoning());
+        assertEquals("Test summary.", assignment.getLlmSummary());
+    }
+
+    @Test
+    public void testApplyEnrichmentNullResponseUsesDefaults() {
+        LlmService llmService = new LlmService(STUB_SOURCE);
+        Assignment assignment = new Assignment();
+        assignment.setName("Empty Response Assignment");
+
+        llmService.applyEnrichment(null, assignment);
+
+        assertEquals(0, assignment.getPriority());
+        assertNull(assignment.getReasoning());
+        assertNull(assignment.getLlmSummary());
+    }
 }

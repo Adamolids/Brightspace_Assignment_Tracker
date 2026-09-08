@@ -1,30 +1,22 @@
 package com.alexdamolidis.ai;
 
-import java.io.IOException;
-
 import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.alexdamolidis.exception.TrackerException;
 import com.alexdamolidis.model.Assignment;
 import com.alexdamolidis.model.Attachment;
 import com.alexdamolidis.model.Course;
 import com.alexdamolidis.model.Semester;
 import com.alexdamolidis.util.RetryUtility;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class LlmService{
     private static final Logger logger = LoggerFactory.getLogger(LlmService.class);
-    private final ObjectMapper mapper;
     private final LlmDataSource dataSource;
 
     public LlmService(LlmDataSource dataSource){
         this.dataSource = dataSource;
-        this.mapper = new ObjectMapper();
     }
 
     /**
@@ -60,62 +52,38 @@ public class LlmService{
     /**
      * Enriches the given assignment with AI generated data. 
      * Handles transient API failures (rate limiting) using retry logic with
-     * exponential backoff, and applies the parsed response directly to the assignment.
+     * exponential backoff, and applies the result directly to the assignment.
      * 
      * @param assignment the assignment to enrich
-     * @throws TrackerException if the request fails due to network issues or interruption
-     * @throws RuntimeException if the request thread is interrupted
+     * @throws RateLimitReachedException if the request is still rate limited after 3 retries
+     * @throws TrackerApiException if the request fails for any non transient reason
      */
     private void populateAiFields(Assignment assignment){
 
             String prompt = buildPrompt(assignment);
 
-            String responseBody = RetryUtility.executeWithRetry(() -> {
-                try{
-                    return dataSource.getRawApiResponse(prompt);
+            Enrichment enrichment = RetryUtility.executeWithRetry(() -> dataSource.enrich(prompt), "Claude AI");
 
-                } catch(IOException e){
-                    throw new TrackerException("Network Failure while contacting Gemini", e);
-
-                } catch(InterruptedException ie){
-                    Thread.currentThread().interrupt();
-                    throw new RuntimeException("Process interrupted or canceled externally while waiting for response.", ie);
-                }
-            }, "Gemini AI");
-
-            syncAiResponseToModel(responseBody, assignment);
+            applyEnrichment(enrichment, assignment);
     }
 
     /**
-     * Parses the nested JSON response from the LLM and maps the generated priority,
-     * reasoning, and summary into the local assignment model.
+     * Maps the generated priority, reasoning, and summary into the local assignment model.
+     * Falls back to default enrichment when the model returned nothing usable.
      * 
-     * @param jsonResponse The raw JSON String returned by the API
+     * @param enrichment the parsed enrichment, may be null
      * @param assignment object to be updated
      */
-    public void syncAiResponseToModel(String jsonResponse, Assignment assignment){
-        try{
-            JsonNode root = mapper.readTree(jsonResponse);
-
-            JsonNode parts = root.path("candidates").path(0).path("content").path("parts").path(0);
-            String contentText = parts.path("text").asText();
-
-            if(contentText.isEmpty()){
-                logger.warn("Gemini returned an empty response for: '{}'", assignment.getName());
-                setDefaultEnrichment(assignment);
-                return;
-            }
-
-            JsonNode aiResult = mapper.readTree(contentText);
-
-            assignment.setPriority(aiResult.path("priority").asInt(0));
-            assignment.setReasoning(aiResult.path("reasoning").asText("No reasoning provided."));
-            assignment.setLlmSummary(aiResult.path("llmSummary").asText("No summary generated."));
-        
-        }catch(JsonProcessingException e){
-            logger.error("LLM sent malformed JSON for: '{}'", assignment.getName());
+    public void applyEnrichment(Enrichment enrichment, Assignment assignment){
+        if(enrichment == null || enrichment.llmSummary() == null || enrichment.llmSummary().isEmpty()){
+            logger.warn("Claude returned an empty response for: '{}'", assignment.getName());
             setDefaultEnrichment(assignment);
+            return;
         }
+
+        assignment.setPriority(enrichment.priority());
+        assignment.setReasoning(enrichment.reasoning() != null ? enrichment.reasoning() : "No reasoning provided.");
+        assignment.setLlmSummary(enrichment.llmSummary());
     }
 
     /**

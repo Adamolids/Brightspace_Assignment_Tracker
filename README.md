@@ -38,9 +38,17 @@ With assignment data cleaned, enriched, and persisted locally, the next step was
 
 ### Interface Implementation for Demo Mode
 
-All three external API dependencies: Brightspace, Gemini, and Google Calendar, were abstracted behind interfaces (`BrightspaceDataSource`, `LlmDataSource`, and `CalendarDataSource`).
+All three external API dependencies: Brightspace, Claude, and Google Calendar, were abstracted behind interfaces (`BrightspaceDataSource`, `LlmDataSource`, and `CalendarDataSource`).
 
 These changes paved the way for demo mode. Concrete implementations can be swapped at the application's entry point without touching any business logic. `AssignmentService`, `LlmService`, and `GoogleCalendarService` have no awareness of whether they're handling live API data or local demo data.
+
+### Migration from Gemini to Claude
+
+The enrichment provider was swapped from Gemini to Claude via the official Anthropic Java SDK. The migration exposed that `LlmDataSource` was not as provider agnostic as intended: it returned a raw response body, and `LlmService` reached directly into Gemini's `candidates[0].content.parts[0].text` envelope to find the payload.
+
+- Typed Contract: `LlmDataSource` now returns an `Enrichment` record rather than a JSON String. Each implementation unwraps its own provider envelope, so no vendor response shape leaks into the service layer.
+- Schema Guaranteed Responses: The Anthropic SDK derives a JSON schema from the `Enrichment` record and constrains the model to it. Previously the output shape was requested in the prompt and validated after the fact, with a fallback path for malformed JSON; the shape is now enforced by the API.
+- Single Retry Owner: The SDK client is built with `maxRetries(0)` so `RetryUtility` remains the only component applying backoff, preserving the previous retry semantics. Transient 429 and overloaded responses are translated into the existing `RateLimitException` so the sync backs off instead of failing.
 
 ## Mermaid Flow Chart
 ```mermaid
@@ -60,7 +68,7 @@ flowchart TD
 
     B2 & B3 --> C1
 
-    C1[Filter eligible assignments<br/>credit-bearing · has due date · not yet enriched] --> C2[/Build prompt<br/>Send to Gemini API/]
+    C1[Filter eligible assignments<br/>credit-bearing · has due date · not yet enriched] --> C2[/Build prompt<br/>Send to Claude API/]
     C2 --> C3[Map response onto Assignment<br/>priority · reasoning · llmSummary]
 
     C3 --> D1
@@ -111,7 +119,7 @@ src/test
 
 tracker.db      (Main relational database - git-ignored)
 cookies.txt     (Local session storage    - git-ignored)
-.env            (Stores Gemini API key, Google Calendar Id, and Semester name - git-ignored)
+.env            (Stores Anthropic API key, Google Calendar Id, and Semester name - git-ignored)
 googleAuth.json (Google OAuth credentials - git-ignored)
 ```
 
@@ -128,9 +136,9 @@ Integrity Logic: Uses folderId as a unique assignment key and orgUnitId as a uni
 ### AI Summarization Notice
 The assignment summarization feature sends assignment contents and attachment text to a Large Language Model for summarization, reasoning, and priority scoring.
 
-Users should be aware that Google's free tier API may store and use submitted content for service improvement. Because course materials may be considered institutional intellectual property, sending this data through the free tier API could violate your school's policies.
+Anthropic does not train on data submitted through the API by default, which is why this project uses the Claude API directly rather than a free consumer tier. Course materials may still be considered institutional intellectual property, so review your school's policy before syncing coursework through any third party service.
 
-To avoid this risk, it is strongly recommended to use a paid API tier or locally hosted LLM where submitted data is not retained or used for training.
+If your institution requires that coursework never leave its own infrastructure, use a locally hosted model instead. `LlmDataSource` is the only seam you would need to reimplement.
 
 ### Authentication Setup
 This project integrates three distinct services. Please follow the steps below to configure your local environment.
@@ -146,13 +154,13 @@ Because students cannot self register for official Brightspace OAuth without adm
 
     4. Create a cookies.txt file in the project root and paste the entire string into the first line.
 
-### 2. Google Gemini AI Enrichment
+### 2. Claude AI Enrichment
 
-    1. Obtain an API key from Google AI Studio.
+    1. Obtain an API key from the Anthropic Console (https://console.anthropic.com/settings/keys).
 
     2. Create a .env file in the project root (see .env.example).
 
-    3. Add your key: API_KEY= yourKeyHere.
+    3. Add your key: ANTHROPIC_API_KEY= yourKeyHere.
 
 
 ### 3. Google Calendar API (OAuth 2.0) Setup

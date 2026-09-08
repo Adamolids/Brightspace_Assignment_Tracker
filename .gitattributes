@@ -1,0 +1,8 @@
+# Normalize all text files to LF in the repository.
+# Prevents the whole tree showing as modified when the project is checked out
+# or edited on Windows and worked on from WSL.
+* text=auto eol=lf
+
+# Binary assets must never be line-ending converted.
+*.pdf binary
+*.db  binary

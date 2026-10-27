@@ -60,16 +60,18 @@ public class ContentMatcher {
      *         {@value #MAX_MATCHES_PER_ASSIGNMENT}. Empty if the name is too generic to match safely.
      */
     public static List<ContentTopic> findMatches(ContentToc toc, String assignmentName){
-        Pattern namePattern = buildNamePattern(assignmentName);
-        if(namePattern == null) return List.of();
+        for(Pattern namePattern : buildNamePatterns(assignmentName)){
+            Map<Long, ContentTopic> matches = new LinkedHashMap<>();
+            collectMatches(toc.modules(), namePattern, false, matches);
 
-        Map<Long, ContentTopic> matches = new LinkedHashMap<>();
-        collectMatches(toc.modules(), namePattern, false, matches);
+            if(matches.isEmpty()) continue;
 
-        return matches.values().stream()
-                      .sorted(Comparator.comparingInt(ContentMatcher::relevanceRank))
-                      .limit(MAX_MATCHES_PER_ASSIGNMENT)
-                      .toList();
+            return matches.values().stream()
+                          .sorted(Comparator.comparingInt(ContentMatcher::relevanceRank))
+                          .limit(MAX_MATCHES_PER_ASSIGNMENT)
+                          .toList();
+        }
+        return List.of();
     }
 
     private static int relevanceRank(ContentTopic topic){
@@ -95,18 +97,22 @@ public class ContentMatcher {
     }
 
     /**
-     * Builds the pattern used to recognize an assignment in Content titles.
+     * Builds the patterns used to recognize an assignment in Content titles, most specific first.
+     * findMatches uses the first pattern that matches anything.
      *
      * - Numbered names match on their kind and number: "Assignment 3 Part 1" matches "Assignment#3", "A#3",
      *   and "HelpForAssignment3", and "Lab 1" matches "Lab 01" but not "Lab 10".
-     * - Midterms and finals match their common spellings ("Mid Term", "Mid_Exam").
+     * - Midterms and finals try the full name first, so "Midterm Employer Evaluation" does not also pick up
+     *   "Midterm Student Check-In Survey". Only when nothing carries the full name do they fall back to the
+     *   common spellings ("Mid Term", "Mid_Exam", or the "Final Project" part of "Final Project Report").
      * - Anything else needs at least two words and matches as a whole phrase.
      *
      * @param assignmentName the assignment's name in Brightspace
-     * @return the pattern, or null if the name is too generic to match safely
+     * @return the patterns to try in order, empty if the name is too generic to match safely
      */
-    static Pattern buildNamePattern(String assignmentName){
-        String name = normalize(assignmentName);
+    static List<Pattern> buildNamePatterns(String assignmentName){
+        String  name       = normalize(assignmentName);
+        Pattern fullPhrase = name.split(" ").length >= 2 ? Pattern.compile("\\b" + Pattern.quote(name) + "\\b") : null;
 
         Matcher numbered = NUMBERED_NAME.matcher(name);
         while(numbered.find()){
@@ -114,19 +120,20 @@ public class ContentMatcher {
             if(STRUCTURAL_WORDS.contains(kind)) continue;
 
             String kindPattern = ASSIGNMENT_WORDS.contains(kind) ? ASSIGNMENT_ALIASES : Pattern.quote(kind);
-            return Pattern.compile("\\b" + kindPattern + " 0*" + numbered.group(2) + "\\b");
+            return List.of(Pattern.compile("\\b" + kindPattern + " 0*" + numbered.group(2) + "\\b"));
         }
         if(MIDTERM.matcher(name).find()){
-            return MIDTERM;
+            return fullNameFirst(fullPhrase, MIDTERM);
         }
         Matcher fin = FINAL.matcher(name);
         if(fin.find()){
-            return Pattern.compile("\\b" + Pattern.quote(fin.group()) + "\\b");
+            return fullNameFirst(fullPhrase, Pattern.compile("\\b" + Pattern.quote(fin.group()) + "\\b"));
         }
-        if(name.split(" ").length >= 2){
-            return Pattern.compile("\\b" + Pattern.quote(name) + "\\b");
-        }
-        return null;
+        return fullPhrase != null ? List.of(fullPhrase) : List.of();
+    }
+
+    private static List<Pattern> fullNameFirst(Pattern fullPhrase, Pattern generic){
+        return fullPhrase != null ? List.of(fullPhrase, generic) : List.of(generic);
     }
 
     /**

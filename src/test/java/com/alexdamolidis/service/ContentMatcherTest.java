@@ -2,7 +2,6 @@ package com.alexdamolidis.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
@@ -46,9 +45,16 @@ public class ContentMatcherTest {
         assertEquals("abcd 12345 assignment 4 demo", ContentMatcher.normalize("ABCD12345Assignment 4 Demo"));
     }
 
+    // Numbered and plain names produce a single pattern; only midterms and finals have a fallback.
+    private static Pattern onlyPattern(String assignmentName){
+        List<Pattern> patterns = ContentMatcher.buildNamePatterns(assignmentName);
+        assertEquals(1, patterns.size(), assignmentName);
+        return patterns.get(0);
+    }
+
     @Test
     public void numberedNamesMatchCommonSpellings(){
-        Pattern pattern = ContentMatcher.buildNamePattern("Assignment 2");
+        Pattern pattern = onlyPattern("Assignment 2");
 
         for(String title : List.of("Assignment#2", "Assignment #2", "Help for Assignment 2", "HelpForAssignment2",
                                    "A#2_Menu Prices", "Asg 2 video explanation transcript", "Assignment_2_Instructions")){
@@ -61,7 +67,7 @@ public class ContentMatcherTest {
 
     @Test
     public void numberMatchesIgnoreLeadingZerosButNotOtherNumbers(){
-        Pattern lab = ContentMatcher.buildNamePattern("Lab 1");
+        Pattern lab = onlyPattern("Lab 1");
 
         assertTrue(lab.matcher(ContentMatcher.normalize("Lab 01 Instructions")).find());
         assertFalse(lab.matcher(ContentMatcher.normalize("Lab 10 Instructions")).find());
@@ -69,26 +75,57 @@ public class ContentMatcherTest {
 
     @Test
     public void courseCodesAndStructuralWordsAreNotUsedToMatch(){
-        Pattern deliverable = ContentMatcher.buildNamePattern("ABCD12345 Deliverable 1");
+        Pattern deliverable = onlyPattern("ABCD12345 Deliverable 1");
 
         assertTrue(deliverable.matcher(ContentMatcher.normalize("ABCD12345_Deliverable 1 - Team Contract")).find());
         assertFalse(deliverable.matcher(ContentMatcher.normalize("ABCD12345 Week 1 Slides")).find());
 
-        Pattern reflection = ContentMatcher.buildNamePattern("Week 3 Reflection");
+        Pattern reflection = onlyPattern("Week 3 Reflection");
         assertFalse(reflection.matcher(ContentMatcher.normalize("Week 3 Lecture Slides")).find());
     }
 
     @Test
-    public void midtermNamesMatchCommonSpellings(){
-        Pattern midterm = ContentMatcher.buildNamePattern("Midterm PART B ");
+    public void midtermFallsBackToCommonSpellingsWhenNothingHasTheFullName(){
+        ContentToc toc = new ContentToc(List.of(
+            module("Mid Term Instructions", file("Exam Rules", "rules.pdf")),
+            module("Week 6", file("Mid_Exam_Instructions_F26", "mid_exam.odt"))
+        ));
 
-        assertTrue(midterm.matcher(ContentMatcher.normalize("Mid Term Instructions")).find());
-        assertTrue(midterm.matcher(ContentMatcher.normalize("Mid_Exam_Instructions_F26")).find());
+        // Both match through the generic fallback; the instructions file sorts first.
+        assertEquals(List.of("Mid_Exam_Instructions_F26", "Exam Rules"), titles(ContentMatcher.findMatches(toc, "Midterm PART B ")));
+    }
+
+    @Test
+    public void midtermPrefersFilesCarryingTheFullName(){
+        ContentToc toc = new ContentToc(List.of(
+            module("Co-op Forms",
+                file("Midterm Student Check-In Survey", "survey.docx"),
+                file("Midterm Employer Evaluation", "evaluation.docx"))
+        ));
+
+        assertEquals(List.of("Midterm Employer Evaluation"), titles(ContentMatcher.findMatches(toc, "Midterm Employer Evaluation")));
+        assertEquals(List.of("Midterm Student Check-In Survey"), titles(ContentMatcher.findMatches(toc, "Midterm Student Check-In Survey")));
+    }
+
+    @Test
+    public void finalPrefersFullNameThenFallsBack(){
+        ContentToc both = new ContentToc(List.of(
+            module("Final Project",
+                file("Final Project Proposal Guide", "proposal.pdf"),
+                file("Final Project Report Template", "report.docx"))
+        ));
+        ContentToc onlyGeneric = new ContentToc(List.of(
+            module("Week 12", file("Final Project Guidelines", "guidelines.pdf"))
+        ));
+
+        // The module is titled "Final Project", so it only matches through the generic fallback.
+        assertEquals(List.of("Final Project Report Template"), titles(ContentMatcher.findMatches(both, "Final Project Report")));
+        assertEquals(List.of("Final Project Guidelines"), titles(ContentMatcher.findMatches(onlyGeneric, "Final Project Report")));
     }
 
     @Test
     public void singleWordNamesAreTooGenericToMatch(){
-        assertNull(ContentMatcher.buildNamePattern("Essay"));
+        assertTrue(ContentMatcher.buildNamePatterns("Essay").isEmpty());
     }
 
     @Test

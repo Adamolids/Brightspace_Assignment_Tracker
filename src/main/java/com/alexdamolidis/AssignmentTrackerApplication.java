@@ -38,12 +38,16 @@ public class AssignmentTrackerApplication {
 		logger.info("Sync was successful");
 
 		logger.info("Starting AI enrichment for {}...", semester.getName());
-		llmService.enrichSemester(semester);
+		try{
+			llmService.enrichSemester(semester);
+			logger.info("Sync and AI enrichment complete.");
 
-		logger.info("Sync and AI enrichment complete.");
-
-		repo.saveSemester(semester);
-		logger.debug("Semester saved to database");
+		}finally{
+			// Save even if enrichment crashed partway, so synced data and completed enrichments
+			// are kept and the next run only enriches what is still missing.
+			repo.saveSemester(semester);
+			logger.debug("Semester saved to database");
+		}
 
 		calendar.syncAssignments(semester.getCourses());
 		logger.info("Synced assignments to Google Calendar.");

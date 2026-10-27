@@ -194,14 +194,52 @@ class GoogleCalendarServiceTest {
         assertEquals("recreated_id_000", assignment.getCalendarEventId());
     }
 
+    /**
+     * Verifies that tracked events beyond the first result page are still found.
+     * Without following nextPageToken, the event on page two would be missed
+     * and a duplicate would be inserted.
+     *
+     */
+    @Test
+    void syncAssignments_shouldReadTrackedEventsFromEveryPage() throws IOException {
+        List<Course> courses = createTestSemester();
+        Assignment assignment = courses.get(0).getAssignments().get(0);
+        assignment.setCalendarEventId(null);
+
+        Event unrelated = new Event().setId("dentist_id").setSummary("Dentist");
+        Event tracked = new Event()
+                .setId("page_two_id")
+                .setSummary("AssignmentOne")
+                .setExtendedProperties(new Event.ExtendedProperties()
+                        .setPrivate(Map.of("folderId", assignment.getFolderId())));
+
+        stubListRequestChain();
+        when(listRequest.execute()).thenReturn(
+                new Events().setItems(List.of(unrelated)).setNextPageToken("page_two"),
+                new Events().setItems(List.of(tracked)));
+        when(eventsService.patch(anyString(), eq("page_two_id"), any())).thenReturn(patchRequest);
+
+        service.syncAssignments(courses);
+
+        verify(listRequest).setPageToken("page_two");
+        verify(eventsService).patch(eq(CALENDAR_ID), eq("page_two_id"), any());
+        verify(eventsService, never()).insert(anyString(), any());
+        assertEquals("page_two_id", assignment.getCalendarEventId());
+    }
+
     // --- Helpers ---
 
     private void mockListResponse(List<Event> items) throws IOException {
+        stubListRequestChain();
+        when(listRequest.execute()).thenReturn(new Events().setItems(items));
+    }
+
+    private void stubListRequestChain() throws IOException {
         when(eventsService.list(anyString())).thenReturn(listRequest);
         when(listRequest.setTimeMin(any())).thenReturn(listRequest);
         when(listRequest.setFields(anyString())).thenReturn(listRequest);
         when(listRequest.setMaxResults(any())).thenReturn(listRequest);
-        when(listRequest.execute()).thenReturn(new Events().setItems(items));
+        when(listRequest.setPageToken(any())).thenReturn(listRequest);
     }
 
     //list of fake courses for test purposes

@@ -5,6 +5,8 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.alexdamolidis.exception.RateLimitReachedException;
+import com.alexdamolidis.exception.TrackerException;
 import com.alexdamolidis.model.Assignment;
 import com.alexdamolidis.model.Attachment;
 import com.alexdamolidis.model.Course;
@@ -33,7 +35,9 @@ public class LlmService{
                 attachmentsBuilder.append("\n Attachment Name: ")
                                   .append(attachment.getFileName())
                                   .append("\n")
-                                  .append(attachment.getAttachmentText())
+                                  .append(attachment.getAttachmentText() != null
+                                          ? attachment.getAttachmentText()
+                                          : "[Attachment could not be read]")
                                   .append("\n");
             }
         }
@@ -90,7 +94,11 @@ public class LlmService{
      * Orchestrates the AI enrichment process for given semester.
      * Retrieves all eligible assignments and populates thir AI generated fields.
      * assignments are skipped if the alreay contain enrichment or if they lack a due date.
-     * 
+     *
+     * A failed assignment is left unenriched and the loop moves on, so it is retried on the next run.
+     * If Claude is still rate limited after retries, enrichment stops early since every remaining
+     * request would fail the same way. Either way, assignments enriched so far are kept.
+     *
      * @param semester containing the courses to be enriched
      */
     public void enrichSemester(Semester semester){
@@ -114,7 +122,18 @@ public class LlmService{
                 continue;
             }
             logger.info("[{}/{}] enriching: '{}'.", currentCount, totalAssignments, assignment.getName());
-            populateAiFields(assignment);
+            try{
+                populateAiFields(assignment);
+
+            }catch(RateLimitReachedException e){
+                logger.warn("Claude is still rate limited, stopping enrichment. The remaining {} assignments will be enriched on the next run.",
+                            totalAssignments - currentCount + 1);
+                return;
+
+            }catch(TrackerException e){
+                logger.warn("[{}/{}] Enrichment failed for '{}', it will be retried on the next run. Reason: {}",
+                            currentCount, totalAssignments, assignment.getName(), e.getMessage());
+            }
         }
     }
 

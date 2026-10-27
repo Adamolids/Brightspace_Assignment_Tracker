@@ -10,6 +10,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.alexdamolidis.client.BrightspaceDataSource;
+import com.alexdamolidis.exception.AttachmentProcessingException;
+import com.alexdamolidis.exception.TrackerApiException;
 import com.alexdamolidis.exception.TrackerException;
 import com.alexdamolidis.model.*;
 import com.alexdamolidis.parser.StringParser;
@@ -90,20 +92,23 @@ public class AssignmentService {
     /**
      * fetch, extract, and assign attachment data from Brightspace API, if an
      * attachment is larger than 10MB it will be skipped to prevent excesive memory usage or video downloads.
-     * 
+     * An attachment that fails to download or extract is skipped with a warning, leaving its text null,
+     * so one unreadable file does not abort the whole sync.
+     *
      * @param assignment assignment object containing attachments.
      * @param orgUnitId unique course identifier.
+     * @throws RateLimitReachedException if Brightspace is still rate limiting after 3 retries
      */
-    private Assignment processAttachments(Assignment assignment, String orgUnitId) {
+    Assignment processAttachments(Assignment assignment, String orgUnitId) {
         for (Attachment attachment : assignment.getAttachments()) {
 
             if (attachment.getFileSize() > 10 * 1024 * 1024) {
                 logger.warn("Skipping large file: '{}'", attachment.getFileName());
                 continue;
             }
-                String url = EndpointBuilder.buildAttachmentUrl(orgUnitId, assignment.getFolderId(),
-                        attachment.getFileId());
-
+            String url = EndpointBuilder.buildAttachmentUrl(orgUnitId, assignment.getFolderId(),
+                    attachment.getFileId());
+            try {
                 byte[] attachmentByteArray = scraper.downloadAttachment(url);
                 if (attachmentByteArray != null) {
                     String extractedText = extractor.extractTextFromBytes(attachmentByteArray);
@@ -111,6 +116,10 @@ public class AssignmentService {
 
                     attachment.setAttachmentText(cleanExtractedText);
                 }
+            } catch (AttachmentProcessingException | TrackerApiException e) {
+                logger.warn("Skipping attachment '{}' on '{}', it could not be read: {}",
+                            attachment.getFileName(), assignment.getName(), e.getMessage());
+            }
         }
         return assignment;
     }

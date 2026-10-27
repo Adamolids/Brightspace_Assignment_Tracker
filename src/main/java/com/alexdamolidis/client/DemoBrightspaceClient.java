@@ -1,11 +1,10 @@
 package com.alexdamolidis.client;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.OffsetDateTime;
 import java.util.List;
+
+import com.alexdamolidis.util.ResourceLoader;
 
 public class DemoBrightspaceClient implements BrightspaceDataSource{
     
@@ -13,16 +12,16 @@ public class DemoBrightspaceClient implements BrightspaceDataSource{
     public String sendGetRequest(String url){
         try{
             if (url.contains("myenrollments")){
-                return Files.readString(Path.of("src/main/resources/demo/enrollments.json"));
+                return ResourceLoader.readString("demo/enrollments.json");
 
             } else if(url.contains("323431")){
-                return injectDueDates(Files.readString(Path.of("src/main/resources/demo/assignments_C2.json")), List.of(-10, 1, 3));
+                return injectDueDates(ResourceLoader.readString("demo/assignments_C2.json"), List.of(-10, 1, 3));
 
             }else if(url.contains("987654")){
-                return injectDueDates(Files.readString(Path.of("src/main/resources/demo/assignments_C3.json")), List.of(6, 12, 25));
+                return injectDueDates(ResourceLoader.readString("demo/assignments_C3.json"), List.of(6, 12, 25));
 
             }else if(url.contains("654321")){
-                return Files.readString(Path.of("src/main/resources/demo/assignments_C1.json"));
+                return ResourceLoader.readString("demo/assignments_C1.json");
             }
             
             throw new RuntimeException("No demo data found for URL: " + url);
@@ -37,7 +36,7 @@ public class DemoBrightspaceClient implements BrightspaceDataSource{
     public byte[] downloadAttachment(String url){
         try{
             if(url.contains("12345678")){
-                return Files.readAllBytes(Paths.get("src/main/resources/demo/Comparative_Fruit_Taxonomy.pdf"));
+                return ResourceLoader.readBytes("demo/Comparative_Fruit_Taxonomy.pdf");
             }
         }catch(IOException e){
             throw new RuntimeException("Error occurred trying to extract bytes from path: " + url, e);

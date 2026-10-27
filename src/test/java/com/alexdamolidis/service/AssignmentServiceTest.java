@@ -1,6 +1,7 @@
 package com.alexdamolidis.service;
 
 import com.alexdamolidis.client.BrightspaceDataSource;
+import com.alexdamolidis.exception.AttachmentProcessingException;
 import com.alexdamolidis.model.*;
 import com.alexdamolidis.repository.SqliteRepository;
 
@@ -147,5 +148,35 @@ class AssignmentServiceTest {
         assignmentService.checkForNewAssignments(semester);
 
         verify(scraper, never()).sendGetRequest(anyString());
+    }
+
+    /**
+     * Verifies that one unreadable attachment is skipped rather than aborting the sync,
+     * and that the remaining attachments on the same assignment are still processed.
+    */
+    @Test
+    void processAttachmentsSkipsAttachmentThatCannotBeRead() {
+        Assignment assignment = new Assignment();
+        assignment.setFolderId("FolderA");
+        assignment.setName("Lab 1");
+
+        Attachment broken = new Attachment();
+        broken.setFileId("broken");
+        broken.setFileName("broken.pdf");
+        assignment.addAttachment(broken);
+
+        Attachment readable = new Attachment();
+        readable.setFileId("readable");
+        readable.setFileName("rubric.txt");
+        assignment.addAttachment(readable);
+
+        when(scraper.downloadAttachment(contains("broken")))
+            .thenThrow(new AttachmentProcessingException("Network error during attachment download"));
+        when(scraper.downloadAttachment(contains("readable"))).thenReturn("Grading rubric".getBytes());
+
+        assignmentService.processAttachments(assignment, "101");
+
+        assertNull(broken.getAttachmentText());
+        assertEquals("Grading rubric", readable.getAttachmentText());
     }
 }

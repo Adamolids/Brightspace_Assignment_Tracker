@@ -263,9 +263,7 @@ public class GoogleCalendarService implements CalendarDataSource{
         Event event = new Event();
 
         event.setSummary(courseName + ": " + assignment.getName());
-        event.setDescription(
-            "Priority: " + assignment.getPriority() + "/4\n\n" +
-            "Summary: "  + assignment.getLlmSummary() + "\n\n");
+        event.setDescription(buildDescription(assignment));
         event.setColorId(daysUntilDueToColorId(assignment.getDaysUntilDue()));
 
         DateTime end   = new DateTime(assignment.getDueDate().toInstant().toEpochMilli());
@@ -282,35 +280,59 @@ public class GoogleCalendarService implements CalendarDataSource{
     }
 
     /**
-     * Fetches all Google Calendar events from the last 4 months.
-     * Iterates the results and collects only the events with the 
+     * Builds the event description from the assignment's priority and LLM summary.
+     * Shared by buildEvent and isUpdateRequired so the change detection always compares
+     * against exactly what would be written.
+     *
+     * @param assignment the assignment being described
+     * @return the event description
+     */
+    private String buildDescription(Assignment assignment){
+        String summary = assignment.getLlmSummary() != null
+                ? assignment.getLlmSummary()
+                : "Not generated yet, it will be added on the next successful run.";
+
+        return "Priority: " + assignment.getPriority() + "/4\n\n" +
+               "Summary: "  + summary + "\n\n";
+    }
+
+    /**
+     * Fetches all Google Calendar events from the last 4 months, following every result page.
+     * Iterates the results and collects only the events with the
      * private extended property "folderId".
-     * 
+     *
      * @return map associating assignment folderIds with their Google Calendar event
      * @throws IOException if the Google Calendar API request fails
      */
     private Map<String, Event> fetchTrackedAssignmentEvents() throws IOException{
         DateTime minTime = new DateTime(OffsetDateTime.now().minusMonths(4).toInstant().toEpochMilli());
 
-        Events events = calendarService.events().list(calendarId)
-                                       .setTimeMin(minTime)
-                                       .setFields("items(id,summary,description,start,end,colorId,extendedProperties)")
-                                       .setMaxResults(2500)
-                                       .execute();
-                                       
         Map<String, Event> folderToEventMap = new HashMap<>();
+        String pageToken = null;
 
-        if(events.getItems() != null){
-            for(Event event : events.getItems()){
-                Event.ExtendedProperties properties = event.getExtendedProperties();
-                if(properties != null && properties.getPrivate() != null){
-                    String folderId = properties.getPrivate().get("folderId");
-                    if(folderId != null){
-                        folderToEventMap.put(folderId, event);
+        do{
+            Events events = calendarService.events().list(calendarId)
+                                           .setTimeMin(minTime)
+                                           .setFields("nextPageToken,items(id,summary,description,start,end,colorId,extendedProperties)")
+                                           .setMaxResults(2500)
+                                           .setPageToken(pageToken)
+                                           .execute();
+
+            if(events.getItems() != null){
+                for(Event event : events.getItems()){
+                    Event.ExtendedProperties properties = event.getExtendedProperties();
+                    if(properties != null && properties.getPrivate() != null){
+                        String folderId = properties.getPrivate().get("folderId");
+                        if(folderId != null){
+                            folderToEventMap.put(folderId, event);
+                        }
                     }
                 }
             }
-        }
+            pageToken = events.getNextPageToken();
+
+        }while(pageToken != null);
+
         return folderToEventMap;
     }
 
@@ -337,9 +359,7 @@ public class GoogleCalendarService implements CalendarDataSource{
         String expectedSummary = courseName + ": " + assignment.getName();
         if (!Objects.equals(remote.getSummary(), expectedSummary)) return true;
 
-        String expectedDescription = "Priority: " + assignment.getPriority() + "/4\n\n" +
-                                      "Summary: "  + assignment.getLlmSummary() + "\n\n";
-        if (!Objects.equals(expectedDescription, remote.getDescription())) return true;
+        if (!Objects.equals(buildDescription(assignment), remote.getDescription())) return true;
 
         if (remote.getStart().getDateTime() == null || remote.getEnd().getDateTime() == null) {
             logger.debug("Remote event '{}' is missing dateTime info. Forcing update.", assignment.getName());

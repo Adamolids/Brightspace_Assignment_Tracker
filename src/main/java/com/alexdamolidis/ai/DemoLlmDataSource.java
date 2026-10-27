@@ -1,9 +1,8 @@
 package com.alexdamolidis.ai;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 
+import com.alexdamolidis.util.ResourceLoader;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class DemoLlmDataSource implements LlmDataSource{
@@ -37,7 +36,7 @@ public class DemoLlmDataSource implements LlmDataSource{
         }
 
         try{
-            return mapper.readValue(Files.readString(Path.of("src/main/resources/demo/" + fileName)), Enrichment.class);
+            return mapper.readValue(ResourceLoader.readString("demo/" + fileName), Enrichment.class);
 
         }catch(IOException e){
             throw new RuntimeException("Failed to read demo LLM response file.", e);

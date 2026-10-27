@@ -28,29 +28,18 @@ public class DemoGoogleCalendarService implements CalendarDataSource{
 
                 String eventName = course.getName() + ": " + assignment.getName();
 
-                int daysUntilDue = (int) assignment.getDaysUntilDue();
-
-                String calendarColor;
-                if      (daysUntilDue < -5)  calendarColor = "Graphite";
-                else if (daysUntilDue <= 2)  calendarColor = "Tomato";
-                else if (daysUntilDue <= 3)  calendarColor = "Tangerine";
-                else if (daysUntilDue <= 7)  calendarColor = "Banana"; 
-                else    {calendarColor = "Sage"; }    
-
                 String formatted = assignment.getDueDate().atZoneSameInstant(ZoneId.systemDefault()).format(formatter);
 
                 logger.info(String.format(
                         "Title: %s %n" +
                         "Due Date: %s %n" +
-                        "Priority: %s %n" +
-                        "Summary: %s %n" +
-                        "Calendar Color: %s %n",
+                        "Calendar Color: %s %n" +
+                        "%s",
                         eventName,
                         formatted,
-                        assignment.getPriority(),
-                        assignment.getLlmSummary(),
-                        calendarColor               
-                )); 
+                        EventFormatter.colorName(assignment),
+                        EventFormatter.description(assignment).strip()
+                ));
             }
         }
     

@@ -1,5 +1,7 @@
 {
-  "priority": 0,
-  "reasoning": "The assignment is 10 days overdue, which triggers an immediate priority of 0. The complexity score is 3 due to the technical requirements of video recording, specialized biomechanical annotation software, and physical implementation of a compound lift.",
-  "llmSummary": "If you are recovering from a recent musculoskeletal injury, please consult with the head trainer before attempting the maximum effort set. This assignment can no longer be submitted. Students were required to submit a biomechanical analysis of a primary compound lift using video recording with annotated overlays of bar path and joint angles. The task involved recording a set at 70% of 1RM from a lateral profile and providing a summary report on technical markers and improvement cues."
+  "llmSummary": "If you are recovering from a recent musculoskeletal injury, please consult with the head trainer before attempting the maximum effort set. Record a set of a primary compound lift at 70% of your 1RM from a lateral profile, annotate the bar path and joint angles, and submit the video with a short report on technical markers and improvement cues.",
+  "reasoning": "Recording and annotating the video takes a session in the gym plus time learning the annotation software, and the written report is short. The technical analysis makes it moderately demanding.",
+  "estimatedHours": 4,
+  "difficulty": 3,
+  "confidence": "HIGH"
 }

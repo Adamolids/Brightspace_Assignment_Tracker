@@ -1,5 +1,7 @@
 {
-  "priority": 2,
-  "reasoning": "The assignment is due in 24 days, but the complexity is rated as 2 (Medium) because it requires a technical report, cross-section analysis, and original visualizations, which meets the criteria for priority 2.",
-  "llmSummary": "Analyze two fruit specimens from different botanical families to produce a Comparative Fruit Taxonomy Report. The technical report must include cross-section analysis, research on evolutionary adaptations, and original visualizations of nutrient density. Students who have previously completed the advanced histology module are required to incorporate cellular-level differentiation into their findings."
+  "llmSummary": "Analyze two fruit specimens from different botanical families and produce a Comparative Fruit Taxonomy Report with cross-section analysis, research on evolutionary adaptations, and original nutrient density visualizations. Students who completed the advanced histology module must also include cellular-level differentiation.",
+  "reasoning": "A full technical report with lab analysis of two specimens, outside research, and original visualizations is a major piece of work spread over several sessions.",
+  "estimatedHours": 14,
+  "difficulty": 4,
+  "confidence": "HIGH"
 }

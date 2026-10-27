@@ -1,5 +1,7 @@
 {
-  "priority": 2,
-  "reasoning": "The assignment is due in 11 days (<= 14 days) and has a complexity score of 2 (Medium) because it requires multi-step documentation, the use of external software (BerryFirst AI), and the creation of a technical report.",
-  "llmSummary": "Select a specialized fruit specimen to analyze its sugar content and firmness for a Fruit Spec Sheet. Use the BerryFirst AI platform to upload photos and refine a slicing plan based on feedback until a 'Ripe' score is achieved. Finally, submit the completed spec sheet, a formatted slicing plan as a PDF, and screenshots of the AI ripeness report."
+  "llmSummary": "Analyze a fruit specimen's sugar content and firmness and record them on the Fruit Spec Sheet template from the course content. Use the BerryFirst AI platform to refine a slicing plan until it scores 'Ripe', then submit the spec sheet, the slicing plan as a PDF, and screenshots of the ripeness report.",
+  "reasoning": "The spec sheet template and marking breakdown from the course content make the deliverables clear. Measurements, photos, and a few rounds of AI feedback add up to an afternoon of work.",
+  "estimatedHours": 4,
+  "difficulty": 2,
+  "confidence": "HIGH"
 }

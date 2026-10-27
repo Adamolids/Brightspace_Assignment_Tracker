@@ -1,0 +1,45 @@
+{
+  "Modules": [
+    {
+      "ModuleId": 9101,
+      "Title": "Week 1",
+      "Modules": [],
+      "Topics": [
+        {
+          "TopicId": 7001,
+          "Title": "Week 1 Lecture - Lifting Fundamentals",
+          "TypeIdentifier": "File",
+          "Url": "/content/enforced/323431/week1/Lifting_Fundamentals.pptx",
+          "IsHidden": false,
+          "IsBroken": false,
+          "LastModifiedDate": "2026-09-02T15:00:00.000Z"
+        }
+      ]
+    },
+    {
+      "ModuleId": 9103,
+      "Title": "Week 3",
+      "Modules": [],
+      "Topics": [
+        {
+          "TopicId": 7002,
+          "Title": "Hypertrophy vs. Strength Taxonomy Report - Instructions",
+          "TypeIdentifier": "File",
+          "Url": "/content/enforced/323431/week3/Taxonomy_Report_Instructions.html",
+          "IsHidden": false,
+          "IsBroken": false,
+          "LastModifiedDate": "2026-09-02T15:00:00.000Z"
+        },
+        {
+          "TopicId": 7003,
+          "Title": "Hypertrophy vs. Strength Taxonomy Report - Walkthrough",
+          "TypeIdentifier": "ContentService",
+          "Url": "/d2l/le/contentservice/topic/7003",
+          "IsHidden": false,
+          "IsBroken": false,
+          "LastModifiedDate": "2026-09-02T15:00:00.000Z"
+        }
+      ]
+    }
+  ]
+}

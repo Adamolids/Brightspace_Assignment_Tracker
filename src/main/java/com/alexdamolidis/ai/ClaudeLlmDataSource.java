@@ -16,29 +16,36 @@ public class ClaudeLlmDataSource implements LlmDataSource{
 
     private final AnthropicClient client;
 
+    // Deadlines are deliberately left out: priority is calculated in code on every run from this
+    // estimate and the time left, so the estimate only needs to describe the work itself.
     private static final String SYSTEM_INSTRUCTIONS = """
-        You are an academic assistant. Analyze the assignment and score it.
+        You are an academic assistant helping a college student plan their workload.
+        Summarize the assignment and estimate how much work it takes.
 
-        1. Eligibility and Restrictions:
+        1. Sources:
+        - The assignment may include instructions, attached files, and related course content. Related course
+          content was found in the course's Content section by matching the assignment's name, because professors
+          often post instructions there instead of in the assignment folder.
+        - Any of these can be missing. Related course content can also include supporting material (examples,
+          sample data, video descriptions); use it to understand the assignment, not as extra deliverables.
+
+        2. Summary:
         - Scan the text for specific audience restrictions (e.g. 'Only for transfer students', 'Requires work permit', 'International students only').
         - IF a restriction exists, it MUST be the very first sentence of the summary.
         - IF NO restriction exists, do NOT mention eligibility, start the summary directly with the assignment goals.
-        - IF the due date is 5 or more days before today's date:
-          - Priority MUST be 0
-          - Summary MUST clearly state the assignment can no longer be submitted.
-        - First determine a complexity score (1-3), then determine priority.
+        - Describe what must be produced and submitted in 2 to 4 sentences.
+        - IF the material is too thin to know what is required, say so plainly rather than inventing details.
 
-        2. Complexity Signals (1-3):
-        - High   (3): Keywords like 'Final', 'Implementation', 'Group Work', or very long instructions.
-        - Medium (2): Keywords like 'Lab', 'Report', 'Documentation', 'Case Study'.
-        - Low    (1): Keywords like 'Quiz', 'Discussion', 'Reflection', 'Check in', 'Contract'.
-
-        3. Priority Logic (0-4, evaluate in order, first match wins):
-        - 0: Days Until Due <= -5
-        - 4: Days Until Due <= 2 days
-        - 3: Days Until Due <= 7 days OR Complexity == 3.
-        - 2: Days Until Due <= 14 days OR Complexity == 2.
-        - 1: Everything else.
+        3. Effort estimate:
+        - estimatedHours: total hours a typical student in this course needs to finish the assignment, including
+          reading the instructions, research or studying, doing the work, and preparing the submission.
+          Reference points: quiz or check in 0.5-1, discussion post or reflection 1-2, lab 2-5,
+          report or case study 5-12, major project or final 12-30 or more. Group work adds coordination time.
+          For a timed test or exam, estimate the study time needed to prepare for it.
+        - difficulty (1-5): how demanding the work is for a student at this level, independent of length.
+        - confidence: HIGH when detailed instructions or a rubric were provided, MEDIUM when they are partial,
+          LOW when there is little beyond the assignment name and course. With LOW, base the estimate on what
+          this kind of assignment usually involves in a course like this one.
         """;
 
     public ClaudeLlmDataSource(String apiKey){

@@ -24,8 +24,10 @@ import com.alexdamolidis.model.Attachment;
 import com.alexdamolidis.model.Course;
 import com.alexdamolidis.repository.SqliteRepository;
 import com.google.api.client.googleapis.json.GoogleJsonResponseException;
+import com.google.api.client.util.DateTime;
 import com.google.api.services.calendar.Calendar;
 import com.google.api.services.calendar.model.Event;
+import com.google.api.services.calendar.model.EventDateTime;
 import com.google.api.services.calendar.model.Events;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -194,14 +196,114 @@ class GoogleCalendarServiceTest {
         assertEquals("recreated_id_000", assignment.getCalendarEventId());
     }
 
+    /**
+     * Verifies that tracked events beyond the first result page are still found.
+     * Without following nextPageToken, the event on page two would be missed
+     * and a duplicate would be inserted.
+     *
+     */
+    @Test
+    void syncAssignments_shouldReadTrackedEventsFromEveryPage() throws IOException {
+        List<Course> courses = createTestSemester();
+        Assignment assignment = courses.get(0).getAssignments().get(0);
+        assignment.setCalendarEventId(null);
+
+        Event unrelated = new Event().setId("dentist_id").setSummary("Dentist");
+        Event tracked = new Event()
+                .setId("page_two_id")
+                .setSummary("AssignmentOne")
+                .setExtendedProperties(new Event.ExtendedProperties()
+                        .setPrivate(Map.of("folderId", assignment.getFolderId())));
+
+        stubListRequestChain();
+        when(listRequest.execute()).thenReturn(
+                new Events().setItems(List.of(unrelated)).setNextPageToken("page_two"),
+                new Events().setItems(List.of(tracked)));
+        when(eventsService.patch(anyString(), eq("page_two_id"), any())).thenReturn(patchRequest);
+
+        service.syncAssignments(courses);
+
+        verify(listRequest).setPageToken("page_two");
+        verify(eventsService).patch(eq(CALENDAR_ID), eq("page_two_id"), any());
+        verify(eventsService, never()).insert(anyString(), any());
+        assertEquals("page_two_id", assignment.getCalendarEventId());
+    }
+
+    /**
+     * Verifies that events for assignments due long ago (e.g. in a co-op course spanning several
+     * terms) are still found. The lookback must reach past the earliest due date, otherwise the
+     * existing event is missed and a duplicate is inserted.
+     *
+     */
+    @Test
+    void syncAssignments_shouldMatchExistingEventsOlderThanTheUsualWindow() throws IOException {
+        List<Course> courses = createTestSemester();
+        Assignment assignment = courses.get(0).getAssignments().get(0);
+        assignment.setCalendarEventId(null);
+        OffsetDateTime dueDate = OffsetDateTime.now().minusMonths(8);
+        assignment.setDueDate(dueDate);
+
+        Event existing = new Event()
+                .setId("old_event_id")
+                .setSummary("courseOne: AssignmentOne")
+                .setStart(new EventDateTime().setDateTime(new DateTime(dueDate.minusHours(1).toInstant().toEpochMilli())))
+                .setExtendedProperties(new Event.ExtendedProperties()
+                        .setPrivate(Map.of("folderId", assignment.getFolderId())));
+
+        mockListResponse(List.of(existing));
+        when(eventsService.patch(anyString(), eq("old_event_id"), any())).thenReturn(patchRequest);
+
+        service.syncAssignments(courses);
+
+        ArgumentCaptor<DateTime> timeMin = ArgumentCaptor.forClass(DateTime.class);
+        verify(listRequest).setTimeMin(timeMin.capture());
+        assertTrue(timeMin.getValue().getValue() <= dueDate.minusDays(1).toInstant().toEpochMilli());
+
+        verify(eventsService, never()).insert(anyString(), any());
+        assertEquals("old_event_id", assignment.getCalendarEventId());
+    }
+
+    /**
+     * Verifies that widening the lookback does not rename a previous semester's events: only orphans
+     * within the last 4 months are marked [OLD], as before.
+     *
+     */
+    @Test
+    void syncAssignments_shouldLeaveOrphansOutsideTheUsualWindowUntouched() throws IOException {
+        Event previousSemester = orphanStarting(OffsetDateTime.now().minusMonths(6), "previous_semester");
+        Event recentlyRemoved  = orphanStarting(OffsetDateTime.now().minusMonths(1), "recently_removed");
+
+        mockListResponse(List.of(previousSemester, recentlyRemoved));
+        when(eventsService.patch(anyString(), eq("recently_removed"), any())).thenReturn(patchRequest);
+
+        service.syncAssignments(new ArrayList<>());
+
+        verify(eventsService).patch(eq(CALENDAR_ID), eq("recently_removed"), any());
+        verify(eventsService, never()).patch(anyString(), eq("previous_semester"), any());
+    }
+
     // --- Helpers ---
 
+    private Event orphanStarting(OffsetDateTime start, String id) {
+        return new Event()
+                .setId(id)
+                .setSummary("Removed assignment " + id)
+                .setStart(new EventDateTime().setDateTime(new DateTime(start.toInstant().toEpochMilli())))
+                .setExtendedProperties(new Event.ExtendedProperties()
+                        .setPrivate(Map.of("folderId", "folder_" + id)));
+    }
+
     private void mockListResponse(List<Event> items) throws IOException {
+        stubListRequestChain();
+        when(listRequest.execute()).thenReturn(new Events().setItems(items));
+    }
+
+    private void stubListRequestChain() throws IOException {
         when(eventsService.list(anyString())).thenReturn(listRequest);
         when(listRequest.setTimeMin(any())).thenReturn(listRequest);
         when(listRequest.setFields(anyString())).thenReturn(listRequest);
         when(listRequest.setMaxResults(any())).thenReturn(listRequest);
-        when(listRequest.execute()).thenReturn(new Events().setItems(items));
+        when(listRequest.setPageToken(any())).thenReturn(listRequest);
     }
 
     //list of fake courses for test purposes

@@ -34,7 +34,7 @@ With assignment data cleaned, enriched, and persisted locally, the next step was
 - Self Healing Recovery: Each event is tagged with a private extended property containing its Brightspace `folderId`. This allows the system to reconcile existing events even when the local database is lost. This also allows us to easily generate new LLM enrichment, by deleting the database file, we can get new summaries and priorities while avoiding duplication of calendar events.
 - Tombstoning: If a calendar event exists in Google Calendar but is no longer present in Brightspace, such as when a professor removes or closes an assignment, the event is marked as "[OLD]" rather than deleted outright, preserving the user's deadline history.
 - Idempotent Updates: Before patching an event, the sync compares the remote state against expected values for summary, description, timestamps, and colorId. Updates only take place when a difference is detected, minimizing unnecessary API calls.
-- Urgency Color Coding: Event color is derived from `daysUntilDue` at sync time rather than priority. Assignments are only sent to the LLM once, minimizing API token consumption. Using `daysUntilDue` ensures the event color is revaluated on each run.
+- Urgency Color Coding: Event color was originally derived from `daysUntilDue` at sync time rather than priority. Assignments are only sent to the LLM once, minimizing API token consumption, so a stored priority went stale while `daysUntilDue` was reevaluated on each run. Since priority is now recalculated every run (see Effort Based Ranking), color follows priority.
 
 ### Interface Implementation for Demo Mode
 
@@ -49,6 +49,17 @@ The enrichment provider was swapped from Gemini to Claude via the official Anthr
 - Typed Contract: `LlmDataSource` now returns an `Enrichment` record rather than a JSON String. Each implementation unwraps its own provider envelope, so no vendor response shape leaks into the service layer.
 - Schema Guaranteed Responses: The Anthropic SDK derives a JSON schema from the `Enrichment` record and constrains the model to it. Previously the output shape was requested in the prompt and validated after the fact, with a fallback path for malformed JSON; the shape is now enforced by the API.
 - Single Retry Owner: The SDK client is built with `maxRetries(0)` so `RetryUtility` remains the only component applying backoff, preserving the previous retry semantics. Transient 429 and overloaded responses are translated into the existing `RateLimitException` so the sync backs off instead of failing.
+
+### Effort Based Ranking
+
+The original ranking asked the LLM to apply a fixed table of deadline thresholds, and the result was stored once. Two problems showed up in practice: the priority went stale as deadlines approached, and the LLM often had little to judge the work by, since professors frequently post instructions in the course's Content section rather than in the assignment folder. A check against real courses found most assignment folders had no instructions or attachments at all, and none of the professors linked their assignment folders into Content.
+
+- Content Section Matching: `ContentMatcher` reads each course's Content table of contents and links files to assignments by name. Names are normalized so "Assignment #2", "Assignment#2", "A#2_Menu", and "HelpForAssignment2" all match. A module named after the assignment contributes all of its documents, and videos, archives, and code samples are skipped. Linked files are downloaded once and only fetched again when Brightspace reports they were modified.
+- Effort Instead of Priority: Claude now returns the hours an assignment needs, a difficulty from 1 to 5, and how much information the estimate was based on. When little was posted, the calendar event says the estimate is a rough guess. Deadlines are no longer part of the prompt.
+- Priority Recalculated Every Run: `PriorityCalculator` divides the estimated hours by the days left to get the hours per day needed, and maps that onto 1 to 4. Anything due within a day is a 4, and anything due within two days is at least a 3, so short tasks are not buried. Submitted and closed assignments drop to 0.
+- Submission Tracking: Assignments are marked as submitted using Brightspace's "my submissions" route and turn grey on the calendar. Brightspace only answers while a folder is open, so status is checked during that window and remembered afterwards. The folder's availability window also replaces the earlier "5 days past due" guess for when an assignment closes.
+- Change Detection: The prompt contains nothing time dependent, so its SHA-256 hash doubles as a fingerprint of the assignment's material. An assignment is only sent to Claude again when its instructions, attachments, or linked course content change.
+- Schema Migration: The new assignment columns are added to existing databases on startup, so an existing `tracker.db` keeps its data. Assignments enriched under the old ranking are estimated once more on the first run.
 
 ## Mermaid Flow Chart
 ```mermaid
@@ -66,12 +77,16 @@ flowchart TD
     B1 -->|No| B2[/Full Sync<br/>Fetch all courses + assignments<br/>Download + extract attachments/]
     B1 -->|Yes| B3[/Smart Sync<br/>Diff courses + assignments<br/>Download + extract attachments for new/]
 
-    B2 & B3 --> C1
+    B2 & B3 --> B4[/Match Content section files by name<br/>Check submission status of open folders/]
 
-    C1[Filter eligible assignments<br/>credit-bearing · has due date · not yet enriched] --> C2[/Build prompt<br/>Send to Claude API/]
-    C2 --> C3[Map response onto Assignment<br/>priority · reasoning · llmSummary]
+    B4 --> C1
 
-    C3 --> D1
+    C1[Filter eligible assignments<br/>credit-bearing · has due date · not submitted or closed<br/>no estimate yet or material changed] --> C2[/Build prompt<br/>Send to Claude API/]
+    C2 --> C3[Map response onto Assignment<br/>effort · difficulty · confidence · summary]
+
+    C3 --> C4[Recalculate priority<br/>estimated hours ÷ days left]
+
+    C4 --> D1
 
     D1[(Upsert semester → courses<br/>→ assignments → attachments)]
 
@@ -105,7 +120,7 @@ src/main/java/com/alexdamolidis/
 ├── model/      (Semester, Course, Assignment, and Attachment POJOs)
 ├── parser/     (HTML sanitization and text normalization utilities)
 ├── repository/ (SQLite persistence and SQL schema management)
-├── service/    (Synchronization logic and duplicate detection)
+├── service/    (Synchronization logic, duplicate detection, Content matching, and priority ranking)
 └── util/       (API validation, endpoint configuration, and content extraction helpers)
 
 src/main/resources/
@@ -213,6 +228,8 @@ If you want to test the application's core logic without setting up any Brightsp
 
 Please note on repeated runs: To simulate realistic upcoming/past deadlines, demo mode dynamically calculates assignment due dates based on your current system clock (eg. now + 3 days). Because the system time advances between runs, the engine will always detect a slight change in the due date and trigger a "Detected change in: assignment" update during the sync phase on all subsequent runs.
 
+The demo data also exercises the effort based ranking: the Hypertrophy report's instructions only exist in the Content section, the Fruit Observation Assignment picks up a template from a module named after it, and the Fruit Survey is already submitted.
+
 ### Multi Institution Compatibility
 
 While configured for the D2L "Slate" environment, this tool can be adapted for other Brightspace instances.
@@ -223,6 +240,8 @@ indicator, you will have all courses set to: worth credits. This means running n
 for enrichment and having them synced to your calendar. 
 
 To adapt this filter, modify the `unpackOrgUnit` method in the `Course` model to match your institution's indicator.
+
+The Content section and submission routes require Learning Environment API version 1.82 or newer, set separately as `newerLeApiVersion` in `EndpointBuilder`. Content matching relies on professors naming modules or files after the assignment; if your courses follow a different convention, `ContentMatcher` is the place to adapt it.
 
 ### Execution Commands
     mvn compile          # compile the project 
@@ -245,3 +264,5 @@ To adapt this filter, modify the `unpackOrgUnit` method in the `Course` model to
  - [x] Google Calendar API export
 
  - [x] Demo mode to run the application with pre loaded data
+
+ - [x] Effort based ranking with Content section matching and submission tracking

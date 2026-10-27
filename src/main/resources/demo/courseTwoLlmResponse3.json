@@ -1,5 +1,7 @@
 {
-  "priority": 4,
-  "reasoning": "The assignment is due in 2 days, which triggers the highest priority level. The complexity is 2 (Medium) because it is a structured technical report requiring peer-reviewed research and comparative analysis of specific physiological mechanisms.",
-  "llmSummary": "Produce a Technical Taxonomy Report comparing the physiological and neurological adaptations of Hypertrophy-focused training versus Absolute Strength training. The report must compare muscle growth mechanisms like mechanical tension and metabolic stress, analyze recovery requirements, cite at least two peer-reviewed journals, and be submitted in PDF format following the provided scientific report template."
+  "llmSummary": "Produce a technical taxonomy report comparing the physiological and neurological adaptations of hypertrophy-focused training versus absolute strength training. Compare growth mechanisms such as mechanical tension and metabolic stress, analyze recovery requirements, cite at least two peer-reviewed journals, and submit it as a PDF using the scientific report template.",
+  "reasoning": "The instructions were found in the course's Content section rather than the assignment folder. A research report with peer-reviewed sources and a comparative analysis typically takes most of two working days.",
+  "estimatedHours": 9,
+  "difficulty": 3,
+  "confidence": "HIGH"
 }

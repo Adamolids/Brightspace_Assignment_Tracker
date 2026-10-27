@@ -6,6 +6,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class Attachment {
 
+    // Files pulled from the course's Content section share the attachment table, marked by this id prefix.
+    public static final String COURSE_CONTENT_PREFIX = "content:";
+
     @JsonProperty("FileName")
     private String fileName;
 
@@ -49,6 +52,24 @@ public class Attachment {
 
     public String getAttachmentText(){
         return attachmentText;
+    }
+
+    /**
+     * Builds the id for a Content section file linked to an assignment. The folderId keeps ids unique
+     * when one file matches several assignments, and the topic's last modified date makes an edited
+     * file count as new, so it is downloaded and summarized again.
+     *
+     * @param folderId the assignment the file is linked to
+     * @param topicId the Content topic id
+     * @param lastModifiedDate the topic's last modified date from the table of contents
+     * @return the attachment id
+     */
+    public static String courseContentId(String folderId, long topicId, String lastModifiedDate){
+        return COURSE_CONTENT_PREFIX + folderId + ":" + topicId + "@" + lastModifiedDate;
+    }
+
+    public boolean isCourseContent(){
+        return fileId != null && fileId.startsWith(COURSE_CONTENT_PREFIX);
     }
 
     @Override

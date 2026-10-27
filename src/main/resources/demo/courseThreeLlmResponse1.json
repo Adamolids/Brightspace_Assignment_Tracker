@@ -1,5 +1,7 @@
 {
-  "priority": 3,
-  "reasoning": "The assignment is due in 5 days, which falls within the <= 7 days threshold for Priority 3. The complexity is rated 1 (Low) because it is a simple survey and document upload task.",
-  "llmSummary": "Complete the online Student Fruit Survey, which takes approximately 15-30 minutes. After finishing, retrieve the full survey results from your email and upload that file to the dropbox to complete the assignment."
+  "llmSummary": "Complete the online Student Fruit Survey, which takes about 15-30 minutes. Download the full survey results from your email and upload them to the dropbox.",
+  "reasoning": "A short survey followed by a single file upload.",
+  "estimatedHours": 0.75,
+  "difficulty": 1,
+  "confidence": "HIGH"
 }

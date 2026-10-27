@@ -1,0 +1,45 @@
+{
+  "Modules": [
+    {
+      "ModuleId": 9201,
+      "Title": "Week 2",
+      "Modules": [],
+      "Topics": [
+        {
+          "TopicId": 8002,
+          "Title": "Botany Basics Lecture",
+          "TypeIdentifier": "File",
+          "Url": "/content/enforced/987654/week2/Botany_Basics.pptx",
+          "IsHidden": false,
+          "IsBroken": false,
+          "LastModifiedDate": "2026-09-02T15:00:00.000Z"
+        }
+      ]
+    },
+    {
+      "ModuleId": 9202,
+      "Title": "Help for Fruit Observation Assignment",
+      "Modules": [],
+      "Topics": [
+        {
+          "TopicId": 8001,
+          "Title": "Fruit Spec Sheet Template",
+          "TypeIdentifier": "File",
+          "Url": "/content/enforced/987654/help/Fruit_Spec_Sheet_Template.html",
+          "IsHidden": false,
+          "IsBroken": false,
+          "LastModifiedDate": "2026-09-02T15:00:00.000Z"
+        },
+        {
+          "TopicId": 8003,
+          "Title": "Slicing Plan Demo (06:40)",
+          "TypeIdentifier": "ContentService",
+          "Url": "/d2l/le/contentservice/topic/8003",
+          "IsHidden": false,
+          "IsBroken": false,
+          "LastModifiedDate": "2026-09-02T15:00:00.000Z"
+        }
+      ]
+    }
+  ]
+}

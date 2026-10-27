@@ -33,6 +33,10 @@ public class GoogleCalendarService implements CalendarDataSource{
 
     private static final Logger logger = LoggerFactory.getLogger(GoogleCalendarService.class);
     private static final String APP_NAME = "brightspace-tracker";
+
+    // Orphaned events are only marked [OLD] within this window, so a previous semester's events are left alone.
+    private static final int TOMBSTONE_WINDOW_MONTHS = 4;
+
     private final Calendar calendarService;
     private final SqliteRepository repository;
     private final String calendarId;
@@ -69,16 +73,21 @@ public class GoogleCalendarService implements CalendarDataSource{
 
     /**
      * Synchronizes a list of courses and their assignments with Google Calendar.
-     * For each assignment, this method updates an existing calendar event, inserts a new one, 
+     * For each assignment, this method updates an existing calendar event, inserts a new one,
      * or marks orphaned events as [OLD] if they no longer exist in Brightspace.
-     * 
+     *
+     * Existing events are looked up as far back as the earliest due date being synced, so assignments
+     * in courses that span several terms are matched instead of inserted again. Only orphans within
+     * the last {@value #TOMBSTONE_WINDOW_MONTHS} months are marked [OLD].
+     *
      * @param courses list of courses to sync
      * @throws CalendarSyncException if a Google Calendar API request fails
      */
     @Override
     public void syncAssignments(List<Course> courses) {
         try {
-            Map<String, Event> remoteEvents = fetchTrackedAssignmentEvents();
+            OffsetDateTime tombstoneSince = OffsetDateTime.now().minusMonths(TOMBSTONE_WINDOW_MONTHS);
+            Map<String, Event> remoteEvents = fetchTrackedAssignmentEvents(lookbackStart(courses, tombstoneSince));
             Map<String, String> eventIdsToSave = new HashMap<>();
 
             for (Course course : courses) {
@@ -94,7 +103,7 @@ public class GoogleCalendarService implements CalendarDataSource{
                 }
             }
 
-            markOrphanedEvents(remoteEvents);
+            markOrphanedEvents(remoteEvents, tombstoneSince);
 
             if (!eventIdsToSave.isEmpty()) {
                 repository.saveCalendarEventIds(eventIdsToSave);
@@ -102,7 +111,7 @@ public class GoogleCalendarService implements CalendarDataSource{
             }
 
         } catch(TokenResponseException e){
-            throw new CalendarAuthException("Google OAuth token is expired or invalid." +
+            throw new CalendarAuthException("Google OAuth token is expired or invalid. " +
                 "Try deleting the file at tokens/StoredCredential and run the application again.");
 
         } catch(IOException e) {
@@ -182,14 +191,19 @@ public class GoogleCalendarService implements CalendarDataSource{
     }
 
     /**
-     * Marks events that no longer correspond to any assignments as [OLD].
-     * 
+     * Marks events that no longer correspond to any assignments as [OLD]. Orphans that start before
+     * tombstoneSince are left untouched: they were only fetched so assignments in courses spanning
+     * several terms could be matched, and are most likely a previous semester's events.
+     *
      * @param orphanedEvents map of events to mark as old
+     * @param tombstoneSince only orphans starting at or after this time are marked
      * @throws IOException if a Google Calendar API request fails
      */
-    private void markOrphanedEvents(Map<String, Event> orphanedEvents) throws IOException {
+    private void markOrphanedEvents(Map<String, Event> orphanedEvents, OffsetDateTime tombstoneSince) throws IOException {
         for (Event orphan : orphanedEvents.values()) {
             String summary = orphan.getSummary();
+
+            if (startsBefore(orphan, tombstoneSince)) continue;
 
             if (summary != null && !summary.contains("[OLD]")) {
                 Event patch = new Event().setSummary("[OLD] " + summary);
@@ -199,8 +213,41 @@ public class GoogleCalendarService implements CalendarDataSource{
         }
     }
 
+    private boolean startsBefore(Event event, OffsetDateTime time){
+        EventDateTime start = event.getStart();
+        if (start == null) return false;
+
+        DateTime value = start.getDateTime() != null ? start.getDateTime() : start.getDate();
+        return value != null && value.getValue() < time.toInstant().toEpochMilli();
+    }
+
     /**
-     * Determines whether a course should be synced. Only credit bearing courses with 
+     * Finds how far back to look for existing events: a day before the earliest due date being synced,
+     * or defaultStart if that is earlier. Without this, an assignment due more than a few months ago
+     * would not be matched to its existing event and would be inserted again.
+     *
+     * @param courses courses being synced
+     * @param defaultStart the usual lookback start
+     * @return the time to look back to
+     */
+    private OffsetDateTime lookbackStart(List<Course> courses, OffsetDateTime defaultStart){
+        OffsetDateTime earliest = defaultStart;
+
+        for (Course course : courses) {
+            if (!shouldSyncCourse(course)) continue;
+
+            for (Assignment assignment : course.getAssignments()) {
+                // Events start an hour before the due date, so look back a full day past it.
+                if (assignment.getDueDate() != null && assignment.getDueDate().minusDays(1).isBefore(earliest)) {
+                    earliest = assignment.getDueDate().minusDays(1);
+                }
+            }
+        }
+        return earliest;
+    }
+
+    /**
+     * Determines whether a course should be synced. Only credit bearing courses with
      * at least one assignment are eligible.
      * 
      * @param course course to be checked
@@ -280,15 +327,16 @@ public class GoogleCalendarService implements CalendarDataSource{
     }
 
     /**
-     * Fetches all Google Calendar events from the last 4 months, following every result page.
+     * Fetches all Google Calendar events ending after the given time, following every result page.
      * Iterates the results and collects only the events with the
      * private extended property "folderId".
      *
+     * @param since only events ending after this time are fetched
      * @return map associating assignment folderIds with their Google Calendar event
      * @throws IOException if the Google Calendar API request fails
      */
-    private Map<String, Event> fetchTrackedAssignmentEvents() throws IOException{
-        DateTime minTime = new DateTime(OffsetDateTime.now().minusMonths(4).toInstant().toEpochMilli());
+    private Map<String, Event> fetchTrackedAssignmentEvents(OffsetDateTime since) throws IOException{
+        DateTime minTime = new DateTime(since.toInstant().toEpochMilli());
 
         Map<String, Event> folderToEventMap = new HashMap<>();
         String pageToken = null;

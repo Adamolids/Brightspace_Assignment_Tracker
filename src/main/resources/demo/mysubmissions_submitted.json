@@ -1,0 +1,28 @@
+[
+  {
+    "Entity": {
+      "DisplayName": "Demo Student",
+      "EntityId": 1001,
+      "EntityType": "User",
+      "Active": true
+    },
+    "Status": 1,
+    "Feedback": null,
+    "CompletionDate": "2026-09-20T14:05:00.000Z",
+    "Submissions": [
+      {
+        "Id": 501,
+        "SubmittedBy": {
+          "Identifier": "1001",
+          "DisplayName": "Demo Student"
+        },
+        "SubmissionDate": "2026-09-20T14:05:00.000Z",
+        "Comment": {
+          "Text": "",
+          "Html": ""
+        },
+        "Files": []
+      }
+    ]
+  }
+]

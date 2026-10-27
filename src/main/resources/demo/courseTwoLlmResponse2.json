@@ -1,5 +1,7 @@
 {
-  "priority": 4,
-  "reasoning": "The assignment is due today (0 days remaining), which dictates the highest priority level regardless of complexity. The task involves technical calculations and structured spreadsheet development, placing it in the medium complexity category.",
-  "llmSummary": "This assignment requires you to have calculated your 1-Rep Max (1RM) values within the last 14 days. You must develop a structured 4-week Linear Periodization Macro-Cycle spreadsheet focusing on a specific training goal such as Strength, Hypertrophy, or Power. The program must utilize percentage-based progression models for core lift weight increases and include a scheduled deload week to manage fatigue and recovery."
+  "llmSummary": "This assignment requires you to have calculated your 1-Rep Max (1RM) values within the last 14 days. Build a 4-week Linear Periodization Macro-Cycle spreadsheet for a chosen goal (Strength, Hypertrophy, or Power), using percentage-based progression for core lifts and a scheduled deload week.",
+  "reasoning": "A structured spreadsheet with weekly calculations for several lifts and a deload week is a few hours of careful work. The percentage-based progression formulas make it moderately demanding.",
+  "estimatedHours": 5,
+  "difficulty": 3,
+  "confidence": "HIGH"
 }

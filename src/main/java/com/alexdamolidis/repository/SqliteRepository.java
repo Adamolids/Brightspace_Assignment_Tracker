@@ -6,10 +6,13 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Types;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,11 +22,23 @@ import com.alexdamolidis.exception.DatabaseTransactionException;
 import com.alexdamolidis.model.Assignment;
 import com.alexdamolidis.model.Attachment;
 import com.alexdamolidis.model.Course;
+import com.alexdamolidis.model.EstimateConfidence;
 import com.alexdamolidis.model.Semester;
 
 public class SqliteRepository {
     private static final Logger logger = LoggerFactory.getLogger(SqliteRepository.class);
     private final String dbUrl;
+
+    // Columns added after the original assignment schema, mapped to their SQL type.
+    private static final Map<String, String> ADDED_ASSIGNMENT_COLUMNS = Map.of(
+        "openDate",       "TEXT",
+        "closeDate",      "TEXT",
+        "estimatedHours", "REAL",
+        "difficulty",     "INTEGER",
+        "confidence",     "TEXT",
+        "materialHash",   "TEXT",
+        "submitted",      "INTEGER DEFAULT 0"
+    );
 
     public SqliteRepository(){
         this.dbUrl = "jdbc:sqlite:tracker.db";
@@ -88,8 +103,36 @@ public class SqliteRepository {
             statement.execute(createAssignment);
             statement.execute(createAttachment);
 
+            addMissingAssignmentColumns(connection);
+
         }catch(SQLException e){
             throw new DatabaseConnectionException("Failed to initialize the SQLite database. " + e);
+        }
+    }
+
+    /**
+     * Adds the effort ranking columns to the assignment table when they are missing. Fresh databases and
+     * databases created by an earlier version both pass through here, so existing data is kept.
+     *
+     * @param connection Database connection opened by initDatabase.
+     * @throws SQLException If the table cannot be inspected or altered.
+     */
+    private void addMissingAssignmentColumns(Connection connection) throws SQLException{
+        Set<String> existingColumns = new HashSet<>();
+
+        try(Statement statement = connection.createStatement();
+            ResultSet columns = statement.executeQuery("PRAGMA table_info(assignment)")){
+            while(columns.next()){
+                existingColumns.add(columns.getString("name"));
+            }
+        }
+        for(Map.Entry<String, String> column : ADDED_ASSIGNMENT_COLUMNS.entrySet()){
+            if(existingColumns.contains(column.getKey())) continue;
+
+            try(Statement statement = connection.createStatement()){
+                statement.execute("ALTER TABLE assignment ADD COLUMN " + column.getKey() + " " + column.getValue());
+            }
+            logger.debug("Added column '{}' to the assignment table", column.getKey());
         }
     }
     /**
@@ -160,17 +203,20 @@ public class SqliteRepository {
 
     /**
      * Saves an Assignment object to the database. Updates all fields except folderId on conflict.
-     * 
+     * Content section files previously linked to this assignment are replaced by the current set,
+     * so files that no longer match, or were edited and downloaded again, do not linger.
+     *
      * @param connection Database connection passed by saveCourse.
      * @param assignment Assignment object to be saved.
      * @param orgUnitId Course's orgUnitId that this assignment belongs to (Course primary key).
-     * @throws SQLException If a database access error occurs. This exception is 
+     * @throws SQLException If a database access error occurs. This exception is
      * bubbled up to the caller to trigger a transaction rollback.
      */
     private void saveAssignment(Connection connection, Assignment assignment, String orgUnitId)throws SQLException{
         String insertAssignment = """
-                INSERT INTO assignment(folderId, orgUnitId, name, dueDate, instructionText, llmSummary, priority, reasoning, calendarEventId)
-                VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO assignment(folderId, orgUnitId, name, dueDate, instructionText, llmSummary, priority, reasoning, calendarEventId,
+                                       openDate, closeDate, estimatedHours, difficulty, confidence, materialHash, submitted)
+                VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(folderId) DO UPDATE SET
                     name               = excluded.name,
                     dueDate            = excluded.dueDate,
@@ -178,25 +224,77 @@ public class SqliteRepository {
                     llmSummary         = excluded.llmSummary,
                     priority           = excluded.priority,
                     reasoning          = excluded.reasoning,
-                    calendarEventId    = excluded.calendarEventId;
+                    calendarEventId    = excluded.calendarEventId,
+                    openDate           = excluded.openDate,
+                    closeDate          = excluded.closeDate,
+                    estimatedHours     = excluded.estimatedHours,
+                    difficulty         = excluded.difficulty,
+                    confidence         = excluded.confidence,
+                    materialHash       = excluded.materialHash,
+                    submitted          = excluded.submitted;
                 """;
         try(PreparedStatement assignmentInsertStmt = connection.prepareStatement(insertAssignment)){
-            assignmentInsertStmt.setString (1, assignment.getFolderId());
-            assignmentInsertStmt.setString (2, orgUnitId);
-            assignmentInsertStmt.setString (3, assignment.getName());
-            assignmentInsertStmt.setString (4, assignment.getDueDate() != null ? assignment.getDueDate().toString() : null);
-            assignmentInsertStmt.setString (5, assignment.getInstructionText());
-            assignmentInsertStmt.setString (6, assignment.getLlmSummary());
-            assignmentInsertStmt.setInt    (7, assignment.getPriority());
-            assignmentInsertStmt.setString (8, assignment.getReasoning());
-            assignmentInsertStmt.setString (9, assignment.getCalendarEventId());
+            assignmentInsertStmt.setString (1,  assignment.getFolderId());
+            assignmentInsertStmt.setString (2,  orgUnitId);
+            assignmentInsertStmt.setString (3,  assignment.getName());
+            assignmentInsertStmt.setString (4,  toText(assignment.getDueDate()));
+            assignmentInsertStmt.setString (5,  assignment.getInstructionText());
+            assignmentInsertStmt.setString (6,  assignment.getLlmSummary());
+            assignmentInsertStmt.setInt    (7,  assignment.getPriority());
+            assignmentInsertStmt.setString (8,  assignment.getReasoning());
+            assignmentInsertStmt.setString (9,  assignment.getCalendarEventId());
+            assignmentInsertStmt.setString (10, toText(assignment.getOpenDate()));
+            assignmentInsertStmt.setString (11, toText(assignment.getCloseDate()));
+            assignmentInsertStmt.setObject (12, assignment.getEstimatedHours(), Types.REAL);
+            assignmentInsertStmt.setObject (13, assignment.getDifficulty(), Types.INTEGER);
+            assignmentInsertStmt.setString (14, assignment.getConfidence() != null ? assignment.getConfidence().name() : null);
+            assignmentInsertStmt.setString (15, assignment.getMaterialHash());
+            assignmentInsertStmt.setBoolean(16, assignment.isSubmitted());
             assignmentInsertStmt.executeUpdate();
         }
+        deleteCourseContentAttachments(connection, assignment.getFolderId());
+
         if(assignment.getAttachments() != null && !assignment.getAttachments().isEmpty()){
             for(Attachment attachment : assignment.getAttachments()){
                 saveAttachment(connection, attachment, assignment.getFolderId());
             }
         }
+    }
+
+    /**
+     * Removes the Content section files stored for an assignment, ahead of saving its current set.
+     *
+     * @param connection Database connection passed by saveAssignment.
+     * @param folderId Assignment's folderId (Assignment primary key).
+     * @throws SQLException If a database access error occurs.
+     */
+    private void deleteCourseContentAttachments(Connection connection, String folderId) throws SQLException{
+        String deleteContent = "DELETE FROM attachment WHERE folderId = ? AND fileId LIKE ?";
+
+        try(PreparedStatement deleteStmt = connection.prepareStatement(deleteContent)){
+            deleteStmt.setString(1, folderId);
+            deleteStmt.setString(2, Attachment.COURSE_CONTENT_PREFIX + "%");
+            deleteStmt.executeUpdate();
+        }
+    }
+
+    private static String toText(OffsetDateTime date){
+        return date != null ? date.toString() : null;
+    }
+
+    private static OffsetDateTime toDate(String text){
+        return text != null ? OffsetDateTime.parse(text) : null;
+    }
+
+    // getDouble and getInt return 0 for SQL NULL, so wasNull is needed to keep "not estimated yet" distinct from 0.
+    private static Double nullableDouble(ResultSet result, String column) throws SQLException{
+        double value = result.getDouble(column);
+        return result.wasNull() ? null : value;
+    }
+
+    private static Integer nullableInt(ResultSet result, String column) throws SQLException{
+        int value = result.getInt(column);
+        return result.wasNull() ? null : value;
     }
 
     /**
@@ -307,16 +405,21 @@ public class SqliteRepository {
                     Assignment assignment = new Assignment();
                     assignment.setFolderId          (assignmentResult.getString("folderId"));
                     assignment.setName              (assignmentResult.getString("name"));
-                    
-                    String date = assignmentResult.getString("dueDate");
-                    if(date != null){
-                        assignment.setDueDate(OffsetDateTime.parse(date));
-                    }
+                    assignment.setDueDate           (toDate(assignmentResult.getString("dueDate")));
                     assignment.setInstructionText   (assignmentResult.getString("instructionText"));
                     assignment.setLlmSummary        (assignmentResult.getString("llmSummary"));
                     assignment.setPriority          (assignmentResult.getInt("priority"));
                     assignment.setReasoning         (assignmentResult.getString("reasoning"));
                     assignment.setCalendarEventId   (assignmentResult.getString("calendarEventId"));
+                    assignment.setOpenDate          (toDate(assignmentResult.getString("openDate")));
+                    assignment.setCloseDate         (toDate(assignmentResult.getString("closeDate")));
+                    assignment.setEstimatedHours    (nullableDouble(assignmentResult, "estimatedHours"));
+                    assignment.setDifficulty        (nullableInt(assignmentResult, "difficulty"));
+                    assignment.setMaterialHash      (assignmentResult.getString("materialHash"));
+                    assignment.setSubmitted         (assignmentResult.getInt("submitted") == 1);
+
+                    String confidence = assignmentResult.getString("confidence");
+                    assignment.setConfidence(confidence != null ? EstimateConfidence.valueOf(confidence) : null);
 
                     assignment.setAttachments(getAttachmentsForAssignment(connection, assignment.getFolderId()));
                     assignments.add(assignment);

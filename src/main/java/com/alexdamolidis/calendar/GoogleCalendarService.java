@@ -263,8 +263,8 @@ public class GoogleCalendarService implements CalendarDataSource{
         Event event = new Event();
 
         event.setSummary(courseName + ": " + assignment.getName());
-        event.setDescription(buildDescription(assignment));
-        event.setColorId(daysUntilDueToColorId(assignment.getDaysUntilDue()));
+        event.setDescription(EventFormatter.description(assignment));
+        event.setColorId(EventFormatter.colorId(assignment));
 
         DateTime end   = new DateTime(assignment.getDueDate().toInstant().toEpochMilli());
         DateTime start = new DateTime(assignment.getDueDate().minusHours(1).toInstant().toEpochMilli());
@@ -277,23 +277,6 @@ public class GoogleCalendarService implements CalendarDataSource{
         event.setExtendedProperties(extendedProperties);
 
         return event;
-    }
-
-    /**
-     * Builds the event description from the assignment's priority and LLM summary.
-     * Shared by buildEvent and isUpdateRequired so the change detection always compares
-     * against exactly what would be written.
-     *
-     * @param assignment the assignment being described
-     * @return the event description
-     */
-    private String buildDescription(Assignment assignment){
-        String summary = assignment.getLlmSummary() != null
-                ? assignment.getLlmSummary()
-                : "Not generated yet, it will be added on the next successful run.";
-
-        return "Priority: " + assignment.getPriority() + "/4\n\n" +
-               "Summary: "  + summary + "\n\n";
     }
 
     /**
@@ -336,30 +319,14 @@ public class GoogleCalendarService implements CalendarDataSource{
         return folderToEventMap;
     }
 
-    /**
-     * Determines the Google Calendar event color ID based on the number of days until an assignment is due.
-     * Possible colors: Graphite, Tomato, Tangerine, Banana, and Sage
-     * 
-     * @param daysUntilDue days remaining before assignment's due date
-     * @return string representing the numeric color ID
-     */
-    private String daysUntilDueToColorId(long daysUntilDue){
-        if (daysUntilDue < -5)  return "8";  // Graphite 
-        if (daysUntilDue <= 2)  return "11"; // Tomato
-        if (daysUntilDue <= 3)  return "6";  // Tangerine
-        if (daysUntilDue <= 7)  return "5";  // Banana
-        return "2";                          // Sage
-    }
-
     private boolean isUpdateRequired(Event remote, Assignment assignment, String courseName){
 
-        String expectedColorId = daysUntilDueToColorId(assignment.getDaysUntilDue());
-        if (!Objects.equals(remote.getColorId(), expectedColorId)) return true;
+        if (!Objects.equals(remote.getColorId(), EventFormatter.colorId(assignment))) return true;
 
         String expectedSummary = courseName + ": " + assignment.getName();
         if (!Objects.equals(remote.getSummary(), expectedSummary)) return true;
 
-        if (!Objects.equals(buildDescription(assignment), remote.getDescription())) return true;
+        if (!Objects.equals(EventFormatter.description(assignment), remote.getDescription())) return true;
 
         if (remote.getStart().getDateTime() == null || remote.getEnd().getDateTime() == null) {
             logger.debug("Remote event '{}' is missing dateTime info. Forcing update.", assignment.getName());

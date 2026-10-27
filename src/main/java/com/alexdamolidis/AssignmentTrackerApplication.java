@@ -1,5 +1,7 @@
 package com.alexdamolidis;
 
+import java.time.OffsetDateTime;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,6 +19,7 @@ import com.alexdamolidis.exception.TrackerException;
 import com.alexdamolidis.model.Semester;
 import com.alexdamolidis.repository.SqliteRepository;
 import com.alexdamolidis.service.AssignmentService;
+import com.alexdamolidis.service.PriorityCalculator;
 import com.alexdamolidis.util.Config;
 
 public class AssignmentTrackerApplication {
@@ -43,8 +46,10 @@ public class AssignmentTrackerApplication {
 			logger.info("Sync and AI enrichment complete.");
 
 		}finally{
+			// Priority is recalculated every run from the effort estimate and the time left.
 			// Save even if enrichment crashed partway, so synced data and completed enrichments
 			// are kept and the next run only enriches what is still missing.
+			PriorityCalculator.rankSemester(semester, OffsetDateTime.now());
 			repo.saveSemester(semester);
 			logger.debug("Semester saved to database");
 		}

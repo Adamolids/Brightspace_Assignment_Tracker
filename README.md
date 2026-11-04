@@ -34,7 +34,7 @@ With assignment data cleaned, enriched, and persisted locally, the next step was
 - Self Healing Recovery: Each event is tagged with a private extended property containing its Brightspace `folderId`. This allows the system to reconcile existing events even when the local database is lost. This also allows us to easily generate new LLM enrichment, by deleting the database file, we can get new summaries and priorities while avoiding duplication of calendar events.
 - Tombstoning: If a calendar event exists in Google Calendar but is no longer present in Brightspace, such as when a professor removes or closes an assignment, the event is marked as "[OLD]" rather than deleted outright, preserving the user's deadline history.
 - Idempotent Updates: Before patching an event, the sync compares the remote state against expected values for summary, description, timestamps, and colorId. Updates only take place when a difference is detected, minimizing unnecessary API calls.
-- Urgency Color Coding: Event color was originally derived from `daysUntilDue` at sync time rather than priority. Assignments are only sent to the LLM once, minimizing API token consumption, so a stored priority went stale while `daysUntilDue` was reevaluated on each run. Since priority is now recalculated every run (see Effort Based Ranking), color follows priority.
+- Urgency Color Coding: Event color was originally derived from `daysUntilDue` at sync time rather than priority. Assignments are only sent to the LLM once, minimizing API token consumption, so a stored priority went stale while `daysUntilDue` was reevaluated on each run. Since priority is now recalculated every run (see Effort Based Ranking), assignment color follows priority. Quizzes and tests have their own colors (see Quizzes and Tests).
 
 ### Interface Implementation for Demo Mode
 
@@ -61,6 +61,17 @@ The original ranking asked the LLM to apply a fixed table of deadline thresholds
 - Change Detection: The prompt contains nothing time dependent, so its SHA-256 hash doubles as a fingerprint of the assignment's material. An assignment is only sent to Claude again when its instructions, attachments, or linked course content change.
 - Schema Migration: The new assignment columns are added to existing databases on startup, so an existing `tracker.db` keeps its data. Assignments enriched under the old ranking are estimated once more on the first run.
 
+### Quizzes and Tests
+
+Quizzes, tests, and midterms written in Brightspace come from each course's quiz list. A check against real courses found that tests and midterms are stored as quizzes, and that professors do not add their own events to the Brightspace calendar, so the quiz list covers them.
+
+- Stored Alongside Assignments: `QuizMapper` turns each quiz into a tracked item with a `quiz:` prefixed id, so saving, ranking, change detection, and duplicate protection on the calendar work the same way as for assignments. Inactive quizzes and placeholders without dates are skipped, and quizzes that only have an end date are due when they close.
+- No AI Enrichment: Quizzes and tests are tracked by their dates alone. Nothing is sent to Claude, and no Content section files are downloaded for them.
+- Clean Titles: Proctoring requirements written into the name ("Quiz 1 - Requires Respondus LockDown Browser + Webcam") are moved into the event description, leaving "Quiz 1" as the title.
+- Their Own Colors: Quizzes are Peacock and tests (names with test, midterm, exam, or final) are Grape. Both turn Graphite once done or closed.
+- Calendar Timing: A quiz written in one sitting (it opens at most six hours before it is due) is shown as that sitting. Quizzes open for days are shown at their deadline, with the opening time in the description.
+- Done Detection: Brightspace does not let students read their own quiz attempts, but it does list released grades. A quiz is marked done once a grade for it appears. Quizzes without a grade item, or whose grades are not released yet, close after their end date.
+
 ## Mermaid Flow Chart
 ```mermaid
 flowchart TD
@@ -77,11 +88,11 @@ flowchart TD
     B1 -->|No| B2[/Full Sync<br/>Fetch all courses + assignments<br/>Download + extract attachments/]
     B1 -->|Yes| B3[/Smart Sync<br/>Diff courses + assignments<br/>Download + extract attachments for new/]
 
-    B2 & B3 --> B4[/Match Content section files by name<br/>Check submission status of open folders/]
+    B2 & B3 --> B4[/Fetch quizzes and tests<br/>Match Content section files by name<br/>Check submission status of open folders<br/>Check grades for quizzes/]
 
     B4 --> C1
 
-    C1[Filter eligible assignments<br/>credit-bearing · has due date · not submitted or closed<br/>no estimate yet or material changed] --> C2[/Build prompt<br/>Send to Claude API/]
+    C1[Filter eligible assignments<br/>credit-bearing · not a quiz or test · has due date<br/>not submitted or closed · no estimate yet or material changed] --> C2[/Build prompt<br/>Send to Claude API/]
     C2 --> C3[Map response onto Assignment<br/>effort · difficulty · confidence · summary]
 
     C3 --> C4[Recalculate priority<br/>estimated hours ÷ days left]
@@ -120,7 +131,7 @@ src/main/java/com/alexdamolidis/
 ├── model/      (Semester, Course, Assignment, and Attachment POJOs)
 ├── parser/     (HTML sanitization and text normalization utilities)
 ├── repository/ (SQLite persistence and SQL schema management)
-├── service/    (Synchronization logic, duplicate detection, Content matching, and priority ranking)
+├── service/    (Synchronization logic, duplicate detection, Content matching, quiz mapping, and priority ranking)
 └── util/       (API validation, endpoint configuration, and content extraction helpers)
 
 src/main/resources/
@@ -228,7 +239,7 @@ If you want to test the application's core logic without setting up any Brightsp
 
 Please note on repeated runs: To simulate realistic upcoming/past deadlines, demo mode dynamically calculates assignment due dates based on your current system clock (eg. now + 3 days). Because the system time advances between runs, the engine will always detect a slight change in the due date and trigger a "Detected change in: assignment" update during the sync phase on all subsequent runs.
 
-The demo data also exercises the effort based ranking: the Hypertrophy report's instructions only exist in the Content section, the Fruit Observation Assignment picks up a template from a module named after it, and the Fruit Survey is already submitted.
+The demo data also exercises the effort based ranking: the Hypertrophy report's instructions only exist in the Content section, the Fruit Observation Assignment picks up a template from a module named after it, and the Fruit Survey is already submitted. The Fruit course also has quizzes: one already graded, one open for several days, a midterm written in one sitting, and a placeholder that is skipped.
 
 ### Multi Institution Compatibility
 
@@ -241,7 +252,7 @@ for enrichment and having them synced to your calendar.
 
 To adapt this filter, modify the `unpackOrgUnit` method in the `Course` model to match your institution's indicator.
 
-The Content section and submission routes require Learning Environment API version 1.82 or newer, set separately as `newerLeApiVersion` in `EndpointBuilder`. Content matching relies on professors naming modules or files after the assignment; if your courses follow a different convention, `ContentMatcher` is the place to adapt it.
+The Content section, submission, and quiz routes require Learning Environment API version 1.82 or newer, set separately as `newerLeApiVersion` in `EndpointBuilder`. Content matching relies on professors naming modules or files after the assignment; if your courses follow a different convention, `ContentMatcher` is the place to adapt it.
 
 ### Execution Commands
     mvn compile          # compile the project 

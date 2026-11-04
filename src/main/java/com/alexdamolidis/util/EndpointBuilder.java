@@ -8,7 +8,7 @@ public class EndpointBuilder {
     private static final String domain     = "slate.sheridancollege.ca";
     private static final String apiVersion = "1.45";
 
-    // The Content and submission routes only exist in newer Learning Environment versions. Slate's Platform
+    // The Content, submission, and quiz routes only exist in newer Learning Environment versions. Slate's Platform
     // API stops at 1.64, so the shared apiVersion above stays at 1.45 and only these routes use 1.82.
     private static final String newerLeApiVersion = "1.82";
 
@@ -42,6 +42,23 @@ public class EndpointBuilder {
 /// https://slate.sheridancollege.ca/d2l/api/le/{ newerLeApiVersion }/{ orgUnitId }/dropbox/folders/{ folderId }/submissions/mysubmissions/
     public static String buildMySubmissionsUrl(String orgUnitId, String folderId){
         return baseUrl + "/d2l/api/le/" + newerLeApiVersion + "/" + orgUnitId + "/dropbox/folders/" + folderId + "/submissions/mysubmissions/";
+    }
+
+/// https://slate.sheridancollege.ca/d2l/api/le/{ newerLeApiVersion }/{ orgUnitId }/quizzes/
+    public static String buildQuizzesUrl(String orgUnitId){
+        return baseUrl + "/d2l/api/le/" + newerLeApiVersion + "/" + orgUnitId + "/quizzes/";
+    }
+
+/// https://slate.sheridancollege.ca/d2l/api/le/{ apiVersion }/{ orgUnitId }/grades/values/myGradeValues/
+    public static String buildMyGradeValuesUrl(String orgUnitId){
+        return baseUrl + "/d2l/api/le/" + apiVersion + "/" + orgUnitId + "/grades/values/myGradeValues/";
+    }
+
+    /**
+     * Resolves a paging link from Brightspace, which may be a full URL or a path on the same host.
+     */
+    public static String resolve(String pathOrUrl){
+        return pathOrUrl.startsWith("http") ? pathOrUrl : baseUrl + pathOrUrl;
     }
 
     public static String getBaseUrl(){

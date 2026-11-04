@@ -1,0 +1,53 @@
+{
+    "Objects": [
+        {
+            "QuizId": 7101,
+            "Name": "Knife Safety Quiz",
+            "IsActive": true,
+            "StartDate": "{now-240h}",
+            "DueDate": "{now-120h}",
+            "EndDate": "{now-120h}",
+            "SubmissionTimeLimit": { "IsEnforced": true, "ShowClock": true, "TimeLimitValue": 15 },
+            "AttemptsAllowed": { "IsUnlimited": false, "NumberOfAttemptsAllowed": 2 },
+            "GradeItemId": 5101,
+            "Description": { "Text": "", "IsDisplayed": false }
+        },
+        {
+            "QuizId": 7102,
+            "Name": "Citrus Identification Quiz - Requires Respondus LockDown Browser",
+            "IsActive": true,
+            "StartDate": "{now-48h}",
+            "DueDate": "{now+72h}",
+            "EndDate": "{now+72h}",
+            "SubmissionTimeLimit": { "IsEnforced": true, "ShowClock": true, "TimeLimitValue": 20 },
+            "AttemptsAllowed": { "IsUnlimited": true, "NumberOfAttemptsAllowed": null },
+            "GradeItemId": 5102,
+            "Description": { "Text": "", "IsDisplayed": false }
+        },
+        {
+            "QuizId": 7103,
+            "Name": "Midterm Test  - Requires Respondus LockDown Browser + Webcam",
+            "IsActive": true,
+            "StartDate": "{now+190h}",
+            "DueDate": "{now+192h}",
+            "EndDate": "{now+192h}",
+            "SubmissionTimeLimit": { "IsEnforced": true, "ShowClock": true, "TimeLimitValue": 110 },
+            "AttemptsAllowed": { "IsUnlimited": false, "NumberOfAttemptsAllowed": 1 },
+            "GradeItemId": 5103,
+            "Description": { "Text": "", "IsDisplayed": false }
+        },
+        {
+            "QuizId": 7104,
+            "Name": "SAMPLE QUIZ",
+            "IsActive": true,
+            "StartDate": null,
+            "DueDate": null,
+            "EndDate": null,
+            "SubmissionTimeLimit": { "IsEnforced": true, "ShowClock": true, "TimeLimitValue": 10 },
+            "AttemptsAllowed": { "IsUnlimited": true, "NumberOfAttemptsAllowed": null },
+            "GradeItemId": null,
+            "Description": { "Text": "", "IsDisplayed": false }
+        }
+    ],
+    "Next": null
+}

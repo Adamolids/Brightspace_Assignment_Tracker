@@ -3,6 +3,7 @@ package com.alexdamolidis.service;
 import java.io.IOException;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -34,6 +35,8 @@ public class AssignmentService {
 
     // Content section files can be long lecture decks or data sheets, so each one is capped before it is sent to Claude.
     static final int MAX_CONTENT_CHARS = 20_000;
+
+    private static final int MAX_QUIZ_PAGES = 20;
 
     private final ObjectMapper mapper;
     private final BrightspaceDataSource scraper;
@@ -190,8 +193,10 @@ public class AssignmentService {
         for (Course course : semester.getCourses()) {
             if (!course.getIsWorthCredits() || course.getAssignments() == null) continue;
 
+            syncQuizzes(course);
             attachCourseContent(course);
             updateSubmissionStatus(course);
+            updateQuizStatus(course);
         }
         return semester;
     }
@@ -305,6 +310,9 @@ public class AssignmentService {
         }
 
         for (Assignment assignment : course.getAssignments()) {
+            // Quizzes and tests are not sent to Claude, so their Content files are not needed.
+            if (assignment.isQuizOrTest()) continue;
+
             List<ContentTopic> matches = ContentMatcher.findMatches(toc, assignment.getName());
             linkContentFiles(assignment, matches, course.getOrgUnitId());
         }
@@ -375,6 +383,7 @@ public class AssignmentService {
         OffsetDateTime now = OffsetDateTime.now();
 
         for (Assignment assignment : course.getAssignments()) {
+            if (assignment.isQuizOrTest()) continue;
             if (assignment.isSubmitted() || assignment.getDueDate() == null || !assignment.isOpenForSubmission(now)) continue;
 
             try {
@@ -395,5 +404,86 @@ public class AssignmentService {
             if (submissions != null && !submissions.isEmpty()) return true;
         }
         return false;
+    }
+
+    /**
+     * Adds the course's quizzes and tests, and picks up changes to the ones already tracked. They are
+     * stored alongside assignments with a "quiz:" id (see {@link QuizMapper}). If the quiz list cannot be
+     * read, the course keeps its previously synced quizzes and the sync continues.
+     *
+     * @param course credit bearing course whose quizzes should be synced
+     * @throws RateLimitReachedException if Brightspace is still rate limiting after 3 retries
+     */
+    void syncQuizzes(Course course) {
+        List<Assignment> quizzes;
+        try {
+            quizzes = fetchQuizzes(course.getOrgUnitId());
+
+        } catch (IOException | TrackerApiException | BrightspaceSyncException e) {
+            logger.warn("Could not read the quizzes for '{}', continuing without them: {}", course.getName(), e.getMessage());
+            return;
+        }
+        Map<String, Assignment> tracked = course.getAssignments().stream()
+                                                .collect(Collectors.toMap(Assignment::getFolderId, a -> a));
+        for (Assignment quiz : quizzes) {
+            Assignment existing = tracked.get(quiz.getFolderId());
+
+            if (existing == null) {
+                course.addAssignment(quiz);
+                logger.info("New {} found: '{}'", quiz.getKind().name().toLowerCase(), quiz.getName());
+
+            } else if (existing.updateFromApi(quiz)) {
+                logger.info("Detected change in: '{}'", existing.getName());
+            }
+        }
+    }
+
+    private List<Assignment> fetchQuizzes(String orgUnitId) throws IOException {
+        List<Assignment> quizzes = new ArrayList<>();
+        String url = EndpointBuilder.buildQuizzesUrl(orgUnitId);
+
+        // The list is paged; the page cap only guards against a paging link that never ends.
+        for (int page = 0; url != null && page < MAX_QUIZ_PAGES; page++) {
+            Quiz.Page quizPage = mapper.readValue(scraper.sendGetRequest(url), Quiz.Page.class);
+
+            for (Quiz quiz : quizPage.quizzes()) {
+                Assignment item = QuizMapper.toAssignment(quiz);
+                if (item != null) quizzes.add(item);
+            }
+            url = quizPage.next() == null || quizPage.next().isBlank() ? null : EndpointBuilder.resolve(quizPage.next());
+        }
+        return quizzes;
+    }
+
+    /**
+     * Marks quizzes and tests as done once a grade for them shows up in the student's grades. Students
+     * cannot read their own quiz attempts (Brightspace answers 403), and only released grades are listed,
+     * so a grade is the signal that a quiz was written. Quizzes without a grade item, or whose grades are
+     * not released yet, simply close after their end date.
+     *
+     * @param course credit bearing course whose quizzes should be checked
+     * @throws RateLimitReachedException if Brightspace is still rate limiting after 3 retries
+     */
+    void updateQuizStatus(Course course) {
+        List<Assignment> ungraded = course.getAssignments().stream()
+                                          .filter(a -> a.isQuizOrTest() && !a.isSubmitted() && a.getGradeItemId() != null)
+                                          .toList();
+        if (ungraded.isEmpty()) return;
+
+        Set<String> gradedItemIds = new HashSet<>();
+        try {
+            for (JsonNode grade : mapper.readTree(scraper.sendGetRequest(EndpointBuilder.buildMyGradeValuesUrl(course.getOrgUnitId())))) {
+                gradedItemIds.add(grade.path("GradeObjectIdentifier").asText());
+            }
+        } catch (IOException | TrackerApiException | BrightspaceSyncException e) {
+            logger.debug("Could not read grades for '{}': {}", course.getName(), e.getMessage());
+            return;
+        }
+        for (Assignment quiz : ungraded) {
+            if (gradedItemIds.contains(quiz.getGradeItemId())) {
+                quiz.setSubmitted(true);
+                logger.info("'{}' has been graded", quiz.getName());
+            }
+        }
     }
 }

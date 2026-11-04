@@ -20,6 +20,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.alexdamolidis.model.Assignment;
+import com.alexdamolidis.model.AssignmentKind;
 import com.alexdamolidis.model.Attachment;
 import com.alexdamolidis.model.Course;
 import com.alexdamolidis.repository.SqliteRepository;
@@ -291,6 +292,38 @@ class GoogleCalendarServiceTest {
                 .setStart(new EventDateTime().setDateTime(new DateTime(start.toInstant().toEpochMilli())))
                 .setExtendedProperties(new Event.ExtendedProperties()
                         .setPrivate(Map.of("folderId", "folder_" + id)));
+    }
+
+    /**
+     * A test written in one sitting is inserted as that sitting in its own color, and the next run
+     * finds the event up to date instead of inserting or rewriting it.
+     */
+    @Test
+    void syncAssignments_shouldShowATestSittingAndLeaveItAloneNextRun() throws IOException {
+        List<Course> courses = createTestSemester();
+        Assignment test = courses.get(0).getAssignments().get(0);
+        test.setKind(AssignmentKind.TEST);
+        test.setOpenDate(test.getDueDate().minusMinutes(110));
+        test.setCalendarEventId(null);
+
+        mockListResponse(Collections.emptyList());
+        ArgumentCaptor<Event> inserted = ArgumentCaptor.forClass(Event.class);
+        when(eventsService.insert(eq(CALENDAR_ID), inserted.capture())).thenReturn(insertRequest);
+        when(insertRequest.execute()).thenReturn(new Event().setId("test_event"));
+
+        service.syncAssignments(courses);
+
+        Event event = inserted.getValue();
+        assertEquals(test.getOpenDate().toInstant().toEpochMilli(), event.getStart().getDateTime().getValue());
+        assertEquals(test.getDueDate().toInstant().toEpochMilli(), event.getEnd().getDateTime().getValue());
+        assertEquals("3", event.getColorId());
+
+        // On the next run Google returns the event exactly as it was written.
+        when(listRequest.execute()).thenReturn(new Events().setItems(List.of(event.setId("test_event"))));
+        service.syncAssignments(courses);
+
+        verify(eventsService, times(1)).insert(anyString(), any());
+        verify(eventsService, never()).patch(anyString(), anyString(), any());
     }
 
     private void mockListResponse(List<Event> items) throws IOException {

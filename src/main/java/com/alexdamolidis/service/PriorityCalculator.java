@@ -17,6 +17,8 @@ import com.alexdamolidis.model.Semester;
  * - 4: due within a day, or past due while the folder still accepts submissions
  * - Otherwise, estimated hours divided by days left gives the hours per day needed, mapped onto 1-4.
  *   Anything due within 2 days is at least a 3, so short tasks are not buried.
+ *
+ * Quizzes and tests are never estimated, so they are ranked by deadline alone.
  */
 public class PriorityCalculator {
 

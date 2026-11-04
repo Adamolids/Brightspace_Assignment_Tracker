@@ -2,7 +2,10 @@ package com.alexdamolidis.client;
 
 import java.io.IOException;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import com.alexdamolidis.util.ResourceLoader;
 
@@ -11,10 +14,12 @@ public class DemoBrightspaceClient implements BrightspaceDataSource{
     // Folder id of the demo assignment shown as already submitted ("Fruit Survey").
     private static final String SUBMITTED_FOLDER_ID = "1053177";
 
+    private static final Pattern RELATIVE_DATE = Pattern.compile("\\{now([+-]\\d+)h\\}");
+
     @Override
     public String sendGetRequest(String url){
         try{
-            // Submission and Content URLs also contain the course id, so they are matched before the course checks below.
+            // Submission, Content, quiz, and grade URLs also contain the course id, so they are matched before the course checks below.
             if (url.contains("mysubmissions")){
                 return url.contains("/" + SUBMITTED_FOLDER_ID + "/") ? ResourceLoader.readString("demo/mysubmissions_submitted.json") : "[]";
 
@@ -22,6 +27,13 @@ public class DemoBrightspaceClient implements BrightspaceDataSource{
                 if (url.contains("323431")) return ResourceLoader.readString("demo/content_toc_C2.json");
                 if (url.contains("987654")) return ResourceLoader.readString("demo/content_toc_C3.json");
                 return "{\"Modules\": []}";
+
+            }else if(url.contains("/quizzes/")){
+                return url.contains("987654") ? injectRelativeDates(ResourceLoader.readString("demo/quizzes_C3.json"))
+                                              : "{\"Objects\": [], \"Next\": null}";
+
+            }else if(url.contains("myGradeValues")){
+                return url.contains("987654") ? ResourceLoader.readString("demo/grades_C3.json") : "[]";
 
             }else if (url.contains("myenrollments")){
                 return ResourceLoader.readString("demo/enrollments.json");
@@ -62,6 +74,12 @@ public class DemoBrightspaceClient implements BrightspaceDataSource{
         }
 
         throw new RuntimeException("Unexpected logic error occurred trying to fetch demo attachment.");
+    }
+
+    // Replaces placeholders like "{now+72h}" with a date that many hours from now, on the hour.
+    private String injectRelativeDates(String json) {
+        OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC).truncatedTo(ChronoUnit.HOURS);
+        return RELATIVE_DATE.matcher(json).replaceAll(match -> now.plusHours(Long.parseLong(match.group(1))).toString());
     }
 
     private String injectDueDates(String json, List<Integer> daysOffsets) {

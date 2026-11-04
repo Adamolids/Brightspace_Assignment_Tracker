@@ -237,7 +237,7 @@ public class GoogleCalendarService implements CalendarDataSource{
             if (!shouldSyncCourse(course)) continue;
 
             for (Assignment assignment : course.getAssignments()) {
-                // Events start an hour before the due date, so look back a full day past it.
+                // Events start at most a few hours before the due date, so look back a full day past it.
                 if (assignment.getDueDate() != null && assignment.getDueDate().minusDays(1).isBefore(earliest)) {
                     earliest = assignment.getDueDate().minusDays(1);
                 }
@@ -296,8 +296,8 @@ public class GoogleCalendarService implements CalendarDataSource{
      * Builds a Google Calendar event from an assignment.
      *
      * The event summary is formatted as "CourseName: AssignmentName". The description
-     * includes the assignment priority and LLM generated summary. Event start and end
-     * times are set to one hour before the due date and the due date itself.
+     * and color come from {@link EventFormatter}. The event ends at the due date and starts an
+     * hour before it, or, for a quiz written in one sitting, when the sitting opens.
      *
      * A private extended property "folderId" is also attached to the event to
      * uniquely associate the calendar event with the Brightspace assignment folder.
@@ -314,7 +314,7 @@ public class GoogleCalendarService implements CalendarDataSource{
         event.setColorId(EventFormatter.colorId(assignment));
 
         DateTime end   = new DateTime(assignment.getDueDate().toInstant().toEpochMilli());
-        DateTime start = new DateTime(assignment.getDueDate().minusHours(1).toInstant().toEpochMilli());
+        DateTime start = new DateTime(EventFormatter.start(assignment).toInstant().toEpochMilli());
 
         event.setStart(new EventDateTime().setDateTime(start));
         event.setEnd(new EventDateTime().setDateTime(end));
@@ -384,7 +384,7 @@ public class GoogleCalendarService implements CalendarDataSource{
         long remoteStart = remote.getStart().getDateTime().getValue();
         long remoteEnd = remote.getEnd().getDateTime().getValue();
 
-        long expectedStart = assignment.getDueDate().minusHours(1).toInstant().toEpochMilli();
+        long expectedStart = EventFormatter.start(assignment).toInstant().toEpochMilli();
         long expectedEnd = assignment.getDueDate().toInstant().toEpochMilli();
 
         if (remoteStart != expectedStart || remoteEnd != expectedEnd) {

@@ -310,6 +310,134 @@ class AssignmentServiceTest {
         assertFalse(open.isSubmitted());
     }
 
+    /**
+     * New quizzes are added with a "quiz:" id and a clean name, tracked ones pick up changes without
+     * losing their calendar event, placeholders without dates are left out, and every page is read.
+     */
+    @Test
+    void syncQuizzesAddsNewQuizzesAndUpdatesTrackedOnes() {
+        Course course = createCreditCourse();
+        course.addAssignment(createAssignment("OpenFolder", "Assignment 1"));
+
+        Assignment tracked = createQuiz("quiz:902", "7002");
+        tracked.setName("Quiz 2");
+        tracked.setCalendarEventId("event-902");
+        course.addAssignment(tracked);
+
+        String firstPage = """
+            { "Objects": [
+                { "QuizId": 901, "Name": "Midterm  - Requires Respondus LockDown Browser + Webcam", "IsActive": true,
+                  "StartDate": "2026-03-12T14:00:00.000Z", "DueDate": "2026-03-12T16:00:00.000Z", "EndDate": "2026-03-12T16:00:00.000Z",
+                  "SubmissionTimeLimit": { "IsEnforced": true, "TimeLimitValue": 110 },
+                  "AttemptsAllowed": { "IsUnlimited": false, "NumberOfAttemptsAllowed": 1 }, "GradeItemId": 7001 },
+                { "QuizId": 903, "Name": "SAMPLE QUIZ", "IsActive": true, "StartDate": null, "DueDate": null, "EndDate": null }
+              ],
+              "Next": "/d2l/api/le/1.82/101/quizzes/?bookmark=903" }
+            """;
+        String secondPage = """
+            { "Objects": [
+                { "QuizId": 902, "Name": "Quiz 2", "IsActive": true, "StartDate": null, "DueDate": null, "EndDate": "2026-03-20T03:59:59.000Z",
+                  "SubmissionTimeLimit": { "IsEnforced": true, "TimeLimitValue": 25 },
+                  "AttemptsAllowed": { "IsUnlimited": false, "NumberOfAttemptsAllowed": 1 }, "GradeItemId": 7002 }
+              ],
+              "Next": null }
+            """;
+        when(scraper.sendGetRequest(endsWith("/101/quizzes/"))).thenReturn(firstPage);
+        when(scraper.sendGetRequest(contains("bookmark=903"))).thenReturn(secondPage);
+
+        assignmentService.syncQuizzes(course);
+
+        assertEquals(3, course.getAssignments().size());
+        Assignment midterm = course.getAssignments().stream().filter(a -> a.getFolderId().equals("quiz:901")).findFirst().orElseThrow();
+        assertEquals("Midterm", midterm.getName());
+        assertEquals(AssignmentKind.TEST, midterm.getKind());
+        assertEquals("Requires Respondus LockDown Browser + Webcam", midterm.getAccessRequirement());
+
+        assertEquals(OffsetDateTime.parse("2026-03-20T03:59:59Z"), tracked.getDueDate());
+        assertEquals(25, tracked.getTimeLimitMinutes());
+        assertEquals("event-902", tracked.getCalendarEventId());
+    }
+
+    @Test
+    void syncQuizzesKeepsTrackedQuizzesWhenTheListCannotBeRead() {
+        Course course = createCreditCourse();
+        Assignment tracked = createQuiz("quiz:902", "7002");
+        course.addAssignment(tracked);
+
+        when(scraper.sendGetRequest(contains("/quizzes/"))).thenThrow(new TrackerApiException("Brightspace API Error: 403 Forbidden."));
+
+        assignmentService.syncQuizzes(course);
+
+        assertEquals(List.of(tracked), course.getAssignments());
+    }
+
+    /**
+     * A quiz is done once its grade shows up in the student's grades. Quizzes whose grade is not
+     * released yet, or that have no grade item, are left as they are.
+     */
+    @Test
+    void updateQuizStatusMarksGradedQuizzesDone() {
+        Course course = createCreditCourse();
+        Assignment graded       = createQuiz("quiz:1", "7001");
+        Assignment notGradedYet = createQuiz("quiz:2", "7002");
+        Assignment noGradeItem  = createQuiz("quiz:3", null);
+        course.addAssignment(graded);
+        course.addAssignment(notGradedYet);
+        course.addAssignment(noGradeItem);
+
+        when(scraper.sendGetRequest(contains("myGradeValues"))).thenReturn("""
+            [ { "GradeObjectIdentifier": "7001", "GradeObjectName": "Quiz 1" },
+              { "GradeObjectIdentifier": "6000", "GradeObjectName": "Assignment 1" } ]
+            """);
+
+        assignmentService.updateQuizStatus(course);
+
+        assertTrue(graded.isSubmitted());
+        assertFalse(notGradedYet.isSubmitted());
+        assertFalse(noGradeItem.isSubmitted());
+    }
+
+    @Test
+    void updateQuizStatusSkipsGradesWhenNoQuizIsWaitingOnOne() {
+        Course course = createCreditCourse();
+        course.addAssignment(createAssignment("OpenFolder", "Assignment 1"));
+        Assignment done = createQuiz("quiz:1", "7001");
+        done.setSubmitted(true);
+        course.addAssignment(done);
+
+        assignmentService.updateQuizStatus(course);
+
+        verifyNoInteractions(scraper);
+    }
+
+    /**
+     * Quizzes have no dropbox folder, and are not sent to Claude, so the Content and submission steps
+     * leave them alone even when a Content module matches their name.
+     */
+    @Test
+    void dropboxStepsSkipQuizzes() {
+        Course course = createCreditCourse();
+        Assignment quiz = createQuiz("quiz:2", "7002");
+        quiz.setName("Assignment 2 Quiz");
+        course.addAssignment(quiz);
+
+        when(scraper.sendGetRequest(contains("content/toc"))).thenReturn(tocJson("2026-09-02T15:00:00.000Z"));
+
+        assignmentService.attachCourseContent(course);
+        assignmentService.updateSubmissionStatus(course);
+
+        assertTrue(quiz.getAttachments().isEmpty());
+        verify(scraper, never()).downloadAttachment(anyString());
+        verify(scraper, never()).sendGetRequest(contains("mysubmissions"));
+    }
+
+    private Assignment createQuiz(String id, String gradeItemId) {
+        Assignment quiz = createAssignment(id, "Quiz");
+        quiz.setKind(AssignmentKind.QUIZ);
+        quiz.setGradeItemId(gradeItemId);
+        return quiz;
+    }
+
     private Course createCreditCourse() {
         Course course = new Course();
         course.setOrgUnitId("101");

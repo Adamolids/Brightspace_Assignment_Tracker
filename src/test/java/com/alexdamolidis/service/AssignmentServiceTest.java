@@ -431,6 +431,74 @@ class AssignmentServiceTest {
         verify(scraper, never()).sendGetRequest(contains("mysubmissions"));
     }
 
+    /**
+     * A course Brightspace refuses keeps what is already saved and skips the rest of the run's steps,
+     * and the other courses still sync.
+     */
+    @Test
+    void syncSkipsARefusedCourseAndFinishesTheOthers() {
+        Course refused = createCreditCourse();
+        Assignment tracked = createAssignment("TrackedFolder", "Assignment 1");
+        tracked.setCalendarEventId("event-1");
+        refused.addAssignment(tracked);
+
+        Course readable = createCreditCourse();
+        readable.setOrgUnitId("202");
+
+        semester.addCourse(refused);
+        semester.addCourse(readable);
+
+        when(mockRepo.loadSemester("Winter 2026")).thenReturn(semester);
+        stubBrightspaceRefusingCourse101("{ \"Items\": [] }");
+
+        assignmentService.sync("Winter 2026");
+
+        assertEquals(List.of(tracked), refused.getAssignments());
+        assertEquals("event-1", tracked.getCalendarEventId());
+        assertEquals(1, readable.getAssignments().size());
+        verify(scraper, times(1)).sendGetRequest(contains("/101/"));
+    }
+
+    @Test
+    void firstSyncSkipsARefusedCourseAndFinishesTheOthers() {
+        stubBrightspaceRefusingCourse101("""
+            { "Items": [
+                { "OrgUnit": { "Id": "101", "Name": "Course101", "Code": "12345678" } },
+                { "OrgUnit": { "Id": "202", "Name": "Course202", "Code": "87654321" } }
+            ] }
+            """);
+
+        Semester synced = assignmentService.sync("Winter 2026");
+
+        assertTrue(synced.getCourses().get(0).getAssignments().isEmpty());
+        assertEquals(1, synced.getCourses().get(1).getAssignments().size());
+        verify(scraper, times(1)).sendGetRequest(contains("/101/"));
+    }
+
+    /**
+     * Expired cookies fail the enrollments request, and that has to stop the run rather than
+     * look like every course being skipped.
+     */
+    @Test
+    void syncStillFailsWhenEnrollmentsCannotBeRead() {
+        when(scraper.sendGetRequest(contains("myenrollments"))).thenThrow(new TrackerApiException("Brightspace API Error: 403 Forbidden."));
+
+        assertThrows(TrackerApiException.class, () -> assignmentService.sync("Winter 2026"));
+    }
+
+    // Answers the way Brightspace does once a student's access to course 101 has ended.
+    private void stubBrightspaceRefusingCourse101(String enrollmentsJson) {
+        when(scraper.sendGetRequest(anyString())).thenAnswer(call -> {
+            String url = call.getArgument(0);
+
+            if (url.contains("myenrollments")) return enrollmentsJson;
+            if (url.contains("/101/"))         throw new TrackerApiException("Brightspace API Error: 403 Forbidden.");
+            if (url.contains("/quizzes/"))     return "{ \"Objects\": [], \"Next\": null }";
+            if (url.contains("content/toc"))   return "{ \"Modules\": [] }";
+            return "[ { \"Id\": \"NewFolder\", \"Name\": \"Lab 1\" } ]";
+        });
+    }
+
     private Assignment createQuiz(String id, String gradeItemId) {
         Assignment quiz = createAssignment(id, "Quiz");
         quiz.setKind(AssignmentKind.QUIZ);

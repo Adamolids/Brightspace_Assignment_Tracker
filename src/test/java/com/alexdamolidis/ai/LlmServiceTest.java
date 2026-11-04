@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Test;
 import com.alexdamolidis.exception.RateLimitReachedException;
 import com.alexdamolidis.exception.TrackerApiException;
 import com.alexdamolidis.model.Assignment;
+import com.alexdamolidis.model.AssignmentKind;
 import com.alexdamolidis.model.Attachment;
 import com.alexdamolidis.model.Course;
 import com.alexdamolidis.model.EstimateConfidence;
@@ -234,6 +235,26 @@ public class LlmServiceTest {
         new LlmService(source).enrichSemester(semester);
 
         assertEquals(0, calls.get());
+    }
+
+    @Test
+    public void testEnrichSemesterSkipsQuizzesAndTests(){
+        AtomicInteger calls = new AtomicInteger();
+        LlmDataSource source = prompt -> {
+            calls.incrementAndGet();
+            return SAMPLE_ENRICHMENT;
+        };
+        Semester semester = createSemester("Quiz 3", "Midterm", "Lab 4");
+        List<Assignment> items = semester.getCourses().get(0).getAssignments();
+        items.get(0).setKind(AssignmentKind.QUIZ);
+        items.get(1).setKind(AssignmentKind.TEST);
+
+        new LlmService(source).enrichSemester(semester);
+
+        assertEquals(1, calls.get());
+        assertNull(items.get(0).getEstimatedHours());
+        assertNull(items.get(1).getLlmSummary());
+        assertEquals(3.0, items.get(2).getEstimatedHours());
     }
 
     private Semester createSemester(String... assignmentNames){

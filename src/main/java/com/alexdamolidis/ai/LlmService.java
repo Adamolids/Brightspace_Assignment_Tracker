@@ -163,6 +163,9 @@ public class LlmService{
             if(!course.getIsWorthCredits() || course.getAssignments() == null) continue;
 
             for(Assignment assignment : course.getAssignments()){
+                // Quizzes and tests are tracked by their dates and status alone.
+                if(assignment.isQuizOrTest()) continue;
+
                 if(assignment.getDueDate() == null){
                     logger.debug("Skipping LLM enrichment for '{}', no due date present.", assignment.getName());
                     continue;

@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory;
 import com.alexdamolidis.exception.DatabaseConnectionException;
 import com.alexdamolidis.exception.DatabaseTransactionException;
 import com.alexdamolidis.model.Assignment;
+import com.alexdamolidis.model.AssignmentKind;
 import com.alexdamolidis.model.Attachment;
 import com.alexdamolidis.model.Course;
 import com.alexdamolidis.model.EstimateConfidence;
@@ -30,14 +31,19 @@ public class SqliteRepository {
     private final String dbUrl;
 
     // Columns added after the original assignment schema, mapped to their SQL type.
-    private static final Map<String, String> ADDED_ASSIGNMENT_COLUMNS = Map.of(
-        "openDate",       "TEXT",
-        "closeDate",      "TEXT",
-        "estimatedHours", "REAL",
-        "difficulty",     "INTEGER",
-        "confidence",     "TEXT",
-        "materialHash",   "TEXT",
-        "submitted",      "INTEGER DEFAULT 0"
+    private static final Map<String, String> ADDED_ASSIGNMENT_COLUMNS = Map.ofEntries(
+        Map.entry("openDate",          "TEXT"),
+        Map.entry("closeDate",         "TEXT"),
+        Map.entry("estimatedHours",    "REAL"),
+        Map.entry("difficulty",        "INTEGER"),
+        Map.entry("confidence",        "TEXT"),
+        Map.entry("materialHash",      "TEXT"),
+        Map.entry("submitted",         "INTEGER DEFAULT 0"),
+        Map.entry("kind",              "TEXT"),
+        Map.entry("timeLimitMinutes",  "INTEGER"),
+        Map.entry("attemptsAllowed",   "INTEGER"),
+        Map.entry("gradeItemId",       "TEXT"),
+        Map.entry("accessRequirement", "TEXT")
     );
 
     public SqliteRepository(){
@@ -111,7 +117,7 @@ public class SqliteRepository {
     }
 
     /**
-     * Adds the effort ranking columns to the assignment table when they are missing. Fresh databases and
+     * Adds the effort ranking and quiz columns to the assignment table when they are missing. Fresh databases and
      * databases created by an earlier version both pass through here, so existing data is kept.
      *
      * @param connection Database connection opened by initDatabase.
@@ -215,8 +221,9 @@ public class SqliteRepository {
     private void saveAssignment(Connection connection, Assignment assignment, String orgUnitId)throws SQLException{
         String insertAssignment = """
                 INSERT INTO assignment(folderId, orgUnitId, name, dueDate, instructionText, llmSummary, priority, reasoning, calendarEventId,
-                                       openDate, closeDate, estimatedHours, difficulty, confidence, materialHash, submitted)
-                VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                       openDate, closeDate, estimatedHours, difficulty, confidence, materialHash, submitted,
+                                       kind, timeLimitMinutes, attemptsAllowed, gradeItemId, accessRequirement)
+                VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(folderId) DO UPDATE SET
                     name               = excluded.name,
                     dueDate            = excluded.dueDate,
@@ -231,7 +238,12 @@ public class SqliteRepository {
                     difficulty         = excluded.difficulty,
                     confidence         = excluded.confidence,
                     materialHash       = excluded.materialHash,
-                    submitted          = excluded.submitted;
+                    submitted          = excluded.submitted,
+                    kind               = excluded.kind,
+                    timeLimitMinutes   = excluded.timeLimitMinutes,
+                    attemptsAllowed    = excluded.attemptsAllowed,
+                    gradeItemId        = excluded.gradeItemId,
+                    accessRequirement  = excluded.accessRequirement;
                 """;
         try(PreparedStatement assignmentInsertStmt = connection.prepareStatement(insertAssignment)){
             assignmentInsertStmt.setString (1,  assignment.getFolderId());
@@ -250,6 +262,11 @@ public class SqliteRepository {
             assignmentInsertStmt.setString (14, assignment.getConfidence() != null ? assignment.getConfidence().name() : null);
             assignmentInsertStmt.setString (15, assignment.getMaterialHash());
             assignmentInsertStmt.setBoolean(16, assignment.isSubmitted());
+            assignmentInsertStmt.setString (17, assignment.getKind().name());
+            assignmentInsertStmt.setObject (18, assignment.getTimeLimitMinutes(), Types.INTEGER);
+            assignmentInsertStmt.setObject (19, assignment.getAttemptsAllowed(), Types.INTEGER);
+            assignmentInsertStmt.setString (20, assignment.getGradeItemId());
+            assignmentInsertStmt.setString (21, assignment.getAccessRequirement());
             assignmentInsertStmt.executeUpdate();
         }
         deleteCourseContentAttachments(connection, assignment.getFolderId());
@@ -417,9 +434,17 @@ public class SqliteRepository {
                     assignment.setDifficulty        (nullableInt(assignmentResult, "difficulty"));
                     assignment.setMaterialHash      (assignmentResult.getString("materialHash"));
                     assignment.setSubmitted         (assignmentResult.getInt("submitted") == 1);
+                    assignment.setTimeLimitMinutes  (nullableInt(assignmentResult, "timeLimitMinutes"));
+                    assignment.setAttemptsAllowed   (nullableInt(assignmentResult, "attemptsAllowed"));
+                    assignment.setGradeItemId       (assignmentResult.getString("gradeItemId"));
+                    assignment.setAccessRequirement (assignmentResult.getString("accessRequirement"));
 
                     String confidence = assignmentResult.getString("confidence");
                     assignment.setConfidence(confidence != null ? EstimateConfidence.valueOf(confidence) : null);
+
+                    // Rows saved before quizzes were tracked have no kind, and are all assignments.
+                    String kind = assignmentResult.getString("kind");
+                    assignment.setKind(kind != null ? AssignmentKind.valueOf(kind) : AssignmentKind.ASSIGNMENT);
 
                     assignment.setAttachments(getAttachmentsForAssignment(connection, assignment.getFolderId()));
                     assignments.add(assignment);

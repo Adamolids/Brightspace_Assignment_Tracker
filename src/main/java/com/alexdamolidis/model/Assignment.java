@@ -52,6 +52,14 @@ public class Assignment {
 
     private boolean submitted;
 
+    private AssignmentKind kind = AssignmentKind.ASSIGNMENT;
+
+    // Quiz and test details, null for assignments. A null attemptsAllowed on a quiz means unlimited attempts.
+    private Integer timeLimitMinutes;
+    private Integer attemptsAllowed;
+    private String  gradeItemId;
+    private String  accessRequirement;
+
     @JsonProperty("CustomInstructions")
     private void unpackInstructions(Map<String, Object> custom){
         if(custom != null){
@@ -205,9 +213,53 @@ public class Assignment {
         this.submitted = submitted;
     }
 
+    public AssignmentKind getKind(){
+        return kind;
+    }
+
+    public void setKind(AssignmentKind kind){
+        this.kind = kind != null ? kind : AssignmentKind.ASSIGNMENT;
+    }
+
+    public boolean isQuizOrTest(){
+        return kind != AssignmentKind.ASSIGNMENT;
+    }
+
+    public Integer getTimeLimitMinutes(){
+        return timeLimitMinutes;
+    }
+
+    public void setTimeLimitMinutes(Integer timeLimitMinutes){
+        this.timeLimitMinutes = timeLimitMinutes;
+    }
+
+    public Integer getAttemptsAllowed(){
+        return attemptsAllowed;
+    }
+
+    public void setAttemptsAllowed(Integer attemptsAllowed){
+        this.attemptsAllowed = attemptsAllowed;
+    }
+
+    public String getGradeItemId(){
+        return gradeItemId;
+    }
+
+    public void setGradeItemId(String gradeItemId){
+        this.gradeItemId = gradeItemId;
+    }
+
+    public String getAccessRequirement(){
+        return accessRequirement;
+    }
+
+    public void setAccessRequirement(String accessRequirement){
+        this.accessRequirement = accessRequirement;
+    }
+
     /**
-     * Copies the fields Brightspace can change mid semester (name, dates, and instructions) from
-     * freshly fetched assignment data. Enrichment, submission status, and attachments are left alone.
+     * Copies the fields Brightspace can change mid semester (name, dates, instructions, and quiz details)
+     * from freshly fetched data. Enrichment, submission status, and attachments are left alone.
      *
      * @param newAssign assignment data fetched from the Brightspace API, with instructions already cleaned
      * @return true if any field changed
@@ -231,6 +283,18 @@ public class Assignment {
         }
         if(!Objects.equals(this.instructionText, newAssign.instructionText)){
             this.instructionText = newAssign.instructionText;
+            changed = true;
+        }
+        if(this.kind != newAssign.kind
+           || !Objects.equals(this.timeLimitMinutes, newAssign.timeLimitMinutes)
+           || !Objects.equals(this.attemptsAllowed, newAssign.attemptsAllowed)
+           || !Objects.equals(this.gradeItemId, newAssign.gradeItemId)
+           || !Objects.equals(this.accessRequirement, newAssign.accessRequirement)){
+            this.kind              = newAssign.kind;
+            this.timeLimitMinutes  = newAssign.timeLimitMinutes;
+            this.attemptsAllowed   = newAssign.attemptsAllowed;
+            this.gradeItemId       = newAssign.gradeItemId;
+            this.accessRequirement = newAssign.accessRequirement;
             changed = true;
         }
 

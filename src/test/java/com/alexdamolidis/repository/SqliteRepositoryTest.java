@@ -18,6 +18,7 @@ import java.util.List;
 import java.io.IOException;
 
 import com.alexdamolidis.model.Assignment;
+import com.alexdamolidis.model.AssignmentKind;
 import com.alexdamolidis.model.Attachment;
 import com.alexdamolidis.model.Course;
 import com.alexdamolidis.model.EstimateConfidence;
@@ -206,10 +207,42 @@ public class SqliteRepositoryTest {
         assertEquals("101202", assignment.getCalendarEventId());
         assertNull(assignment.getEstimatedHours());
         assertFalse(assignment.isSubmitted());
+        assertEquals(AssignmentKind.ASSIGNMENT, assignment.getKind());
 
         assignment.setEstimatedHours(2.0);
         repo.saveSemester(migrated);
         assertEquals(2.0, repo.loadSemester("Winter2026Test").getCourses().get(0).getAssignments().get(0).getEstimatedHours());
+    }
+
+    /**
+     * Ensures quiz details survive a save and load, and that assignments saved alongside them keep their kind.
+     */
+    @Test
+    public void quizFieldsRoundTrip(){
+        SqliteRepository repo = new SqliteRepository("jdbc:sqlite:test.db");
+        Semester testSemester = createTestSemester();
+
+        Assignment quiz = new Assignment();
+        quiz.setFolderId("quiz:4400123");
+        quiz.setName("Midterm");
+        quiz.setKind(AssignmentKind.TEST);
+        quiz.setTimeLimitMinutes(110);
+        quiz.setGradeItemId("7700456");
+        quiz.setAccessRequirement("Requires Respondus LockDown Browser + Webcam");
+        testSemester.getCourses().get(0).addAssignment(quiz);
+
+        repo.saveSemester(testSemester);
+        List<Assignment> loaded = repo.loadSemester("Winter2026Test").getCourses().get(0).getAssignments();
+
+        Assignment loadedQuiz       = loaded.stream().filter(a -> a.getFolderId().equals("quiz:4400123")).findFirst().orElseThrow();
+        Assignment loadedAssignment = loaded.stream().filter(a -> a.getFolderId().equals("102030")).findFirst().orElseThrow();
+
+        assertEquals(AssignmentKind.TEST, loadedQuiz.getKind());
+        assertEquals(110, loadedQuiz.getTimeLimitMinutes());
+        assertNull(loadedQuiz.getAttemptsAllowed());
+        assertEquals("7700456", loadedQuiz.getGradeItemId());
+        assertEquals("Requires Respondus LockDown Browser + Webcam", loadedQuiz.getAccessRequirement());
+        assertEquals(AssignmentKind.ASSIGNMENT, loadedAssignment.getKind());
     }
 
     /**

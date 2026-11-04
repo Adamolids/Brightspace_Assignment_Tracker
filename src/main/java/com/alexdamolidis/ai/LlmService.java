@@ -12,6 +12,7 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.alexdamolidis.exception.LlmAuthException;
 import com.alexdamolidis.exception.RateLimitReachedException;
 import com.alexdamolidis.exception.TrackerException;
 import com.alexdamolidis.model.Assignment;
@@ -119,6 +120,8 @@ public class LlmService{
      * request would fail the same way. Either way, assignments enriched so far are kept.
      *
      * @param semester containing the courses to be enriched
+     * @throws LlmAuthException if the API key is rejected, which needs fixing before any estimate can be made.
+     *                          Assignments enriched so far stay on the semester for the caller to save.
      */
     public void enrichSemester(Semester semester){
         List<PendingEnrichment> pending = findAssignmentsNeedingEnrichment(semester);
@@ -141,6 +144,9 @@ public class LlmService{
                 logger.warn("Claude is still rate limited, stopping enrichment. The remaining {} assignments will be enriched on the next run.",
                             totalAssignments - currentCount + 1);
                 return;
+
+            }catch(LlmAuthException e){
+                throw e;
 
             }catch(TrackerException e){
                 logger.warn("[{}/{}] Enrichment failed for '{}', it will be retried on the next run. Reason: {}",

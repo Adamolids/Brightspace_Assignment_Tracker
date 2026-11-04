@@ -33,6 +33,8 @@ public class QuizMapperTest {
         assertEquals("Quiz-2",         QuizMapper.cleanName("Quiz-2- Requires Respondus LockDown Browser"));
         assertEquals("Midterm PART A", QuizMapper.cleanName("Midterm PART A- Requires Respondus LockDown Browser"));
         assertEquals("Quiz #1",        QuizMapper.cleanName("Quiz #1"));
+        assertEquals("Test 2 Winter",  QuizMapper.cleanName("Test 2  Winter "));
+        assertEquals("Test 2 Winter",  QuizMapper.cleanName("Test 2  Winter - Requires Respondus LockDown Browser"));
 
         assertEquals("Requires Respondus LockDown Browser + Webcam",
                      QuizMapper.accessRequirementOf("Test1 - Requires Respondus LockDown Browser + Webcam"));

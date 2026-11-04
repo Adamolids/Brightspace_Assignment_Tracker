@@ -25,6 +25,8 @@ public class QuizMapper {
     // Matched against the normalized name, so "Test1", "Mid Term", and "Midterm PART A" are all recognized.
     private static final Pattern TEST_NAME = Pattern.compile("\\b(?:tests?|exams?|midterms?|mid term|final)\\b");
 
+    private static final Pattern WHITESPACE = Pattern.compile("\\s+");
+
     private QuizMapper(){}
 
     /**
@@ -60,15 +62,14 @@ public class QuizMapper {
     }
 
     /**
-     * Removes the proctoring requirement from a quiz name, so "Quiz 2  - Requires Respondus LockDown Browser"
-     * becomes "Quiz 2".
+     * Removes the proctoring requirement from a quiz name and evens out its spacing, so
+     * "Quiz 2  - Requires Respondus LockDown Browser" becomes "Quiz 2" and "Test 1  Fall" becomes "Test 1 Fall".
      */
     static String cleanName(String name){
         Matcher suffix = REQUIREMENT_SUFFIX.matcher(name);
-        if(!suffix.find()) return name.strip();
+        String cleaned = suffix.find() ? name.substring(0, suffix.start()) : name;
 
-        String cleaned = name.substring(0, suffix.start()).strip();
-        return cleaned.isEmpty() ? name.strip() : cleaned;
+        return WHITESPACE.matcher((cleaned.isBlank() ? name : cleaned).strip()).replaceAll(" ");
     }
 
     /**
@@ -76,7 +77,7 @@ public class QuizMapper {
      */
     static String accessRequirementOf(String name){
         Matcher suffix = REQUIREMENT_SUFFIX.matcher(name);
-        return suffix.find() ? suffix.group(1).replaceAll("\\s+", " ") : null;
+        return suffix.find() ? WHITESPACE.matcher(suffix.group(1)).replaceAll(" ") : null;
     }
 
     /**

@@ -170,6 +170,8 @@
           <artifactId>exec-maven-plugin</artifactId>
           <configuration>
             <mainClass>com.alexdamolidis.AssignmentTrackerApplication</mainClass>
+            <!-- The Anthropic SDK leaves daemon threads running. They end with the JVM, so don't wait 15 seconds for them at exit. -->
+            <cleanupDaemonThreads>false</cleanupDaemonThreads>
           </configuration>
           <executions>
             <execution>

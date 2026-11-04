@@ -43,6 +43,9 @@ public class AssignmentService {
     private final ContentExtractor extractor;
     private final SqliteRepository repo;
 
+    // Courses Brightspace refused during the current sync, see skipUnreadableCourse.
+    private final Set<String> unreadableCourseIds = new HashSet<>();
+
     public AssignmentService(BrightspaceDataSource scraper, SqliteRepository repo) {
         this.mapper = new ObjectMapper();
         this.repo = repo;
@@ -80,13 +83,12 @@ public class AssignmentService {
      * specified course.
      *
      * @param course course object
-     * @throws TrackerException If the JSON respose cannot be mapped to the Assignment model.
+     * @throws RateLimitReachedException if Brightspace is still rate limiting after 3 retries
      */
     private void hydrateCourseWithAssignments(Course course){
-
-        String assignmentsJson = scraper.sendGetRequest(EndpointBuilder.buildAllAssignmentsUrl(course.getOrgUnitId()));
-
         try{
+            String assignmentsJson = scraper.sendGetRequest(EndpointBuilder.buildAllAssignmentsUrl(course.getOrgUnitId()));
+
             List<Assignment> assignments = mapper.readValue(assignmentsJson, new TypeReference<List<Assignment>>() {});
             for (Assignment assign : assignments) {
                 cleanInstructions(assign);
@@ -95,9 +97,19 @@ public class AssignmentService {
                 processAttachments(assign, course.getOrgUnitId());
             }
             course.setAssignments(assignments);
-        }catch(IOException e){
-            throw new TrackerException( course.getName() + " failed to sync. ", e);
+        }catch(IOException | TrackerApiException | BrightspaceSyncException e){
+            skipUnreadableCourse(course, e);
         }
+    }
+
+    /**
+     * Brightspace refuses a course once the student's access ends, and that should not stop the other
+     * courses from syncing. The course keeps what is already saved, and skips the rest of this run's steps.
+     * Expired cookies still stop the run, since they fail the enrollments request before any course is read.
+     */
+    private void skipUnreadableCourse(Course course, Exception e){
+        unreadableCourseIds.add(course.getOrgUnitId());
+        logger.warn("Could not read the assignments for '{}', skipping it this run: {}", course.getName(), e.getMessage());
     }
 
     /**
@@ -177,6 +189,8 @@ public class AssignmentService {
     }
 
     public Semester sync(String semesterName){
+        unreadableCourseIds.clear();
+
         Semester existingSemester = repo.loadSemester(semesterName);
         Semester semester;
 
@@ -192,6 +206,7 @@ public class AssignmentService {
 
         for (Course course : semester.getCourses()) {
             if (!course.getIsWorthCredits() || course.getAssignments() == null) continue;
+            if (unreadableCourseIds.contains(course.getOrgUnitId())) continue;
 
             syncQuizzes(course);
             attachCourseContent(course);
@@ -235,15 +250,15 @@ public class AssignmentService {
      * name, dates, and instructions, and any attachments added since the last run are downloaded.
      *
      * @param semester object to be checked
-     * @throws TrackerException If the JSON response cannot be mapped to the
-     * Assignment model.
+     * @throws RateLimitReachedException if Brightspace is still rate limiting after 3 retries
      */
     void checkForNewAssignments(Semester semester) {
         for (Course course : semester.getCourses()) {
             if (!course.getIsWorthCredits())
                 continue;
-            String assignmentsJson = scraper.sendGetRequest(EndpointBuilder.buildAllAssignmentsUrl(course.getOrgUnitId()));
             try{
+                String assignmentsJson = scraper.sendGetRequest(EndpointBuilder.buildAllAssignmentsUrl(course.getOrgUnitId()));
+
                 List<Assignment> assignmentsFromApi = mapper.readValue(assignmentsJson, new TypeReference<List<Assignment>>(){});
 
                 Map<String, Assignment> existingAssignmentsMap = course.getAssignments().stream()
@@ -266,8 +281,8 @@ public class AssignmentService {
                         addNewAttachments(existingAssignment, newAssignmentData, course.getOrgUnitId());
                     }
                 }
-            }catch (IOException e){
-                throw new TrackerException( course.getName() + " failed to sync. ", e);
+            }catch (IOException | TrackerApiException | BrightspaceSyncException e){
+                skipUnreadableCourse(course, e);
             }
         }
     }

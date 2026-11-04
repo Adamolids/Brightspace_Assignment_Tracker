@@ -3,6 +3,7 @@ package com.alexdamolidis.ai;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.OffsetDateTime;
@@ -11,6 +12,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.jupiter.api.Test;
 
+import com.alexdamolidis.exception.LlmAuthException;
 import com.alexdamolidis.exception.RateLimitReachedException;
 import com.alexdamolidis.exception.TrackerApiException;
 import com.alexdamolidis.model.Assignment;
@@ -235,6 +237,25 @@ public class LlmServiceTest {
         new LlmService(source).enrichSemester(semester);
 
         assertEquals(0, calls.get());
+    }
+
+    @Test
+    public void testEnrichSemesterStopsAndFailsWhenTheApiKeyIsRejected(){
+        AtomicInteger calls = new AtomicInteger();
+        LlmDataSource source = prompt -> {
+            if(calls.incrementAndGet() == 2){
+                throw new LlmAuthException("Claude rejected the API key (HTTP 401).", new RuntimeException());
+            }
+            return SAMPLE_ENRICHMENT;
+        };
+        Semester semester = createSemester("Lab 1", "Lab 2", "Lab 3");
+        List<Assignment> assignments = semester.getCourses().get(0).getAssignments();
+
+        assertThrows(LlmAuthException.class, () -> new LlmService(source).enrichSemester(semester));
+
+        assertEquals(2, calls.get());
+        assertEquals(3.0, assignments.get(0).getEstimatedHours());
+        assertNull(assignments.get(1).getLlmSummary());
     }
 
     @Test

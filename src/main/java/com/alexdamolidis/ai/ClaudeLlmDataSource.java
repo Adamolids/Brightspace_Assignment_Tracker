@@ -1,11 +1,14 @@
 package com.alexdamolidis.ai;
 
+import com.alexdamolidis.exception.LlmAuthException;
 import com.alexdamolidis.exception.RateLimitException;
 import com.alexdamolidis.exception.TrackerApiException;
 import com.alexdamolidis.util.Config;
 import com.anthropic.client.AnthropicClient;
 import com.anthropic.client.okhttp.AnthropicOkHttpClient;
 import com.anthropic.errors.AnthropicServiceException;
+import com.anthropic.errors.PermissionDeniedException;
+import com.anthropic.errors.UnauthorizedException;
 import com.anthropic.models.messages.MessageCreateParams;
 import com.anthropic.models.messages.StructuredMessageCreateParams;
 
@@ -67,7 +70,8 @@ public class ClaudeLlmDataSource implements LlmDataSource{
      * @param prompt The formatted assignment data String
      * @return The parsed enrichment, or null if the response carried no content
      * @throws RateLimitException  if the API is rate limited or overloaded, so RetryUtility backs off
-     * @throws TrackerApiException if the request fails for any non transient reason
+     * @throws LlmAuthException   if the API key is rejected
+     * @throws TrackerApiException if the request fails for any other non transient reason
      */
     @Override
     public Enrichment enrich(String prompt){
@@ -88,6 +92,9 @@ public class ClaudeLlmDataSource implements LlmDataSource{
 
         }catch(com.anthropic.errors.RateLimitException e){
             throw new RateLimitException("Claude AI Error: 429 Rate Limit. Slowing down requests.", e);
+
+        }catch(UnauthorizedException | PermissionDeniedException e){
+            throw new LlmAuthException("Claude rejected the API key (HTTP " + e.statusCode() + "). Replace ANTHROPIC_API_KEY in .env and run again.", e);
 
         }catch(AnthropicServiceException e){
             if(isOverloaded(e)){

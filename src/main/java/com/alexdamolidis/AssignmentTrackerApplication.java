@@ -15,6 +15,7 @@ import com.alexdamolidis.calendar.GoogleCalendarService;
 import com.alexdamolidis.client.BrightspaceClient;
 import com.alexdamolidis.client.BrightspaceDataSource;
 import com.alexdamolidis.client.DemoBrightspaceClient;
+import com.alexdamolidis.exception.LlmAuthException;
 import com.alexdamolidis.exception.TrackerException;
 import com.alexdamolidis.model.Semester;
 import com.alexdamolidis.repository.SqliteRepository;
@@ -61,6 +62,11 @@ public class AssignmentTrackerApplication {
 	public static void main(String[] args) {
 		try{
 			new AssignmentTrackerApplication().start();
+
+		}catch(LlmAuthException e){
+			// start() has already saved by the time this reaches here.
+			logger.error("{} Everything synced and estimated so far was saved, but the calendar was not updated.", e.getMessage());
+			System.exit(1);
 
 		}catch(TrackerException e){
 			logger.error("Critical application error occurred during the sync process.", e);
